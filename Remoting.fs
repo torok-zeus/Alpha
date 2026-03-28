@@ -8,6 +8,7 @@ type ParkingRecord =
     {
         Spot : string
         Plate : string
+        StartTime : System.DateTime
     }
 [<JavaScript>]
 module Remoting =
@@ -16,14 +17,25 @@ module Remoting =
     let ParkCar spot plate =
         async {
             
-            let record =
-                {
-                   Spot =spot
+           let records =
+               if File.Exists(file) then
+                   File.ReadAllLines(file)
+                   |> Array.map ( fun l -> JsonSerializer.Deserialize<ParkingRecord>(l))
+                   |> Array.toList
+               else []
+           
+           let filtered = records |> List.filter (fun r -> r.Spot <> spot)
+
+           let newRecord =
+               {
+                   Spot = spot
                    Plate = plate
-                }
-            let json = JsonSerializer.Serialize(record)
-            
-            File.AppendAllText(file, json + "\n")
+                   StartTime = System.DateTime.Now
+               }
+           let newList = newRecord :: filtered
+           let lines = newList |> List.map JsonSerializer.Serialize
+           
+           File.WriteAllLines(file, lines)
         }
 
     [<Rpc>]

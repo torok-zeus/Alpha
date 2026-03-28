@@ -12,7 +12,7 @@ module Client =
 
     let selectedSpot=Var.Create("is not selected")
     let plateNumber = Var.Create ""
-    let parkedSpots = Var.Create<Map<string,string>>(Map.empty)
+    let parkedSpots = Var.Create<Map<string, ParkingRecord>>(Map.empty)
 
     let parkingSpots =
         ["A1";"A2";"A3";"A4";"A5";"B1";"B2";"B3";"B4";"B5"]
@@ -38,7 +38,7 @@ module Client =
                 textView(
                     parkedSpots.View.Map(fun map ->
                         match map.TryFind spot with
-                        | Some plate -> plate
+                        | Some record -> record.Plate
                         | None -> ""
                     )
                 )
@@ -53,7 +53,7 @@ module Client =
 
             let map =
                 data
-                |> List.map (fun r -> r.Spot, r.Plate)
+                |> List.map (fun r -> r.Spot, r)
                 |> Map.ofList
 
             parkedSpots.Value <- map
@@ -107,7 +107,15 @@ module Client =
                     else
                         async{
                             do! Remoting.ParkCar spot plate
-                            parkedSpots.Value <- current.Add(spot, plate)
+
+                            let newRecord =
+                                {
+                                  Spot = spot
+                                  Plate = plate
+                                  StartTime = System.DateTime.Now
+                                }
+
+                            parkedSpots.Value <- current.Add(spot, newRecord)
 
                             plateNumber.Value <- ""
                             selectedSpot.Value <- "is not selected"
@@ -143,4 +151,91 @@ module Client =
             ] [
                 text "Leaving"
             ]
+
+            button [
+                attr.style "margin:10px; padding:10px"
+
+                on.click (fun _ _ ->
+                    let spot = selectedSpot.Value
+
+                    if spot = "is not selected" then
+                        JS.Alert("Select a parking space first")
+                    else
+                        JS.Window.Location.Href <- "/payment/" + spot
+                )
+            ] [
+                text "Go to Payment"
+            ]
         ]
+
+    let PaymentMain (spot:string) =
+        
+        async {
+            let! data = Remoting.LoadParking()
+
+            let map =
+                data
+                |> List.map ( fun r -> r.Spot, r)
+                |> Map.ofList
+
+            parkedSpots.Value <- map
+        }
+        |> Async.StartImmediate
+
+        let info =
+            parkedSpots.View.Map (fun map ->
+                match map.TryFind spot with
+                | Some record ->
+                    let now = System.DateTime.Now
+                    let diff = now - record.StartTime
+                    
+                    let minutes = int diff.TotalMinutes
+                    let price = (float minutes / 60.0) * 300.0
+
+                    "Plate:" + record.Plate +
+                    " | Start: " + record.StartTime.ToString("HH:mm") +
+                    " | Now: " + now.ToString("HH:mm") +
+                    " | Time: " + string minutes + " min" +
+                    " | Price: " + string (int price) + "Ft"
+                | None ->
+                    "No data found"
+            )
+        div [] [
+            h2 [] [text ("Payment - " + spot)]
+
+            div [] [
+                textView info
+            ]
+            button [
+                attr.style "margin:10px; padding:10px"
+
+                on.click (fun _ _ ->
+                    async{
+                        do! Remoting.LeaveCar spot
+
+                        let current = parkedSpots.Value
+                        parkedSpots.Value <- current.Remove spot
+
+                        JS.Alert("Payment successful!")
+
+                        JS.Window.Location.Href <- "/"
+                    }
+                    |> Async.StartImmediate
+                )
+            ] [
+                text "Pay"
+            ]
+
+            
+
+            button [
+                attr.style "margin:10px; padding:10px"
+
+                on.click ( fun _ _ ->
+                    JS.Window.Location.Href <- "/"
+                )
+            ] [
+                text "Back"
+            ]
+        ]
+    

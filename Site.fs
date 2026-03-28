@@ -8,7 +8,7 @@ open WebSharper.UI.Html
 
 type EndPoint =
     | [<EndPoint "/">] Home
-    | [<EndPoint "/payment/{spot}"] Payment of string
+    | [<EndPoint "/payment/{spot}">] Payment of string
 
 module Site =
 
@@ -27,7 +27,9 @@ module Site =
    
     [<Website>]
     let Main =
-        Sitlet.Sum [
-           Sitelet.Content "/" Home HomePage
-           Sitlet.Content "/payment/{spot}" (funt ctx spot -> PaymentPage spot ctx)
+        Sitelet.Sum [
+           Sitelet.Infer <| fun ctx endpoint ->
+               match endpoint with
+               | Home -> HomePage ctx
+               | Payment spot -> PaymentPage spot ctx
         ]

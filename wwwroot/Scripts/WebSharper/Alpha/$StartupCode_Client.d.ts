@@ -3,7 +3,7 @@ import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpM
 import Var from "../WebSharper.UI/WebSharper.UI.Var`1"
 export default class $StartupCode_Client {
   static parkingSpots:FSharpList_T<string>;
-  static parkedSpots:Var<FSharpMap<string, string>>;
+  static parkedSpots:Var<FSharpMap<string, {Spot:string,Plate:string,StartTime:number}>>;
   static plateNumber:Var<string>;
   static selectedSpot:Var<string>;
 }
