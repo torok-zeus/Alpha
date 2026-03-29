@@ -10,6 +10,20 @@ open WebSharper.UI.Notation
 [<JavaScript>]
 module Client =
 
+    let MenuBar =
+        div [
+            attr.style "width:100%; padding:10px; background:#333; color:white; display:flex; gap:20px"
+        ] [
+            a [
+                attr.style "color:white; cursor:pointer"
+                on.click (fun _ _ -> JS.Window.Location.Href <- "/payment")
+            ] [text "Home"]
+
+            a [
+                attr.style "color:white; cursor:pointer"
+                on.click (fun _ _ -> JS.Window.Location.Href <- "/payment")
+            ] [ text "Payment"]
+        ]
     let selectedSpot=Var.Create("is not selected")
     let plateNumber = Var.Create ""
     let parkedSpots = Var.Create<Map<string, ParkingRecord>>(Map.empty)
@@ -61,6 +75,8 @@ module Client =
         |> Async.StartImmediate
 
         div [] [
+
+            MenuBar
 
             h1 [] [ text "Parking registry" ]
 
@@ -125,102 +141,67 @@ module Client =
             ] [
                 text "Parking"
             ]
-
-            button [
-                attr.style "margin:10px; padding:10px"
-
-                on.click (fun _ _ ->
-
-                    let spot = selectedSpot.Value
-
-                    if spot = "is not selected" then
-                        JS.Alert("Select a parking space first")
-
-                    else
-                        async{
-                            do! Remoting.LeaveCar spot
-
-                            let current = parkedSpots.Value
-                            parkedSpots.Value <- current.Remove spot
-
-                            plateNumber.Value <- ""
-                            selectedSpot.Value <- "is not selected"
-                        }
-                        |> Async.StartImmediate
-                )
-            ] [
-                text "Leaving"
-            ]
-
-            button [
-                attr.style "margin:10px; padding:10px"
-
-                on.click (fun _ _ ->
-                    let spot = selectedSpot.Value
-
-                    if spot = "is not selected" then
-                        JS.Alert("Select a parking space first")
-                    else
-                        JS.Window.Location.Href <- "/payment/" + spot
-                )
-            ] [
-                text "Go to Payment"
-            ]
         ]
 
-    let PaymentMain (spot:string) =
+    let PaymentMain () =
         
-        async {
-            let! data = Remoting.LoadParking()
+        let inputPlate = Var.Create ""
 
-            let map =
-                data
-                |> List.map ( fun r -> r.Spot, r)
-                |> Map.ofList
-
-            parkedSpots.Value <- map
-        }
-        |> Async.StartImmediate
-
-        let info =
-            parkedSpots.View.Map (fun map ->
-                match map.TryFind spot with
+        let paymentInfo =
+            inputPlate.View.Map (fun plate ->
+                let map = parkedSpots.Value
+                match map |> Map.tryPick (fun _ r -> if r.Plate = plate then Some r else None) with
+                | None ->
+                    " No such var found."
                 | Some record ->
                     let now = System.DateTime.Now
                     let diff = now - record.StartTime
-                    
                     let minutes = int diff.TotalMinutes
-                    let price = (float minutes / 60.0) * 300.0
+                    let price = int ((float minutes / 60.0) * 300.0)
 
-                    "Plate:" + record.Plate +
-                    " | Start: " + record.StartTime.ToString("HH:mm") +
-                    " | Now: " + now.ToString("HH:mm") +
-                    " | Time: " + string minutes + " min" +
-                    " | Price: " + string (int price) + "Ft"
-                | None ->
-                    "No data found"
-            )
+                    $"Plate: {record.Plate} | Spot: {record.Spot} | Minutes: {minutes} | Price: {price} FT"
+                )
+        async {
+            let! data = Remoting.LoadParking()
+            parkedSpots.Value <-
+                data |> List.map (fun r -> r.Spot, r) |> Map.ofList
+        }
+        |> Async.StartImmediate
+
         div [] [
-            h2 [] [text ("Payment - " + spot)]
+
+            MenuBar
+
+            h2 [] [text ("Payment by plate")]
 
             div [] [
-                textView info
+                text "Plate: "
+                Doc.Input [ attr.placeholder "Enter plate"] inputPlate
+            ]
+
+            div [
+                attr.style "margin-top: 15px"
+            ] [
+                textView paymentInfo
             ]
             button [
                 attr.style "margin:10px; padding:10px"
 
                 on.click (fun _ _ ->
-                    async{
-                        do! Remoting.LeaveCar spot
+                    let plate = inputPlate.Value
+                    let map = parkedSpots.Value
 
-                        let current = parkedSpots.Value
-                        parkedSpots.Value <- current.Remove spot
-
-                        JS.Alert("Payment successful!")
-
-                        JS.Window.Location.Href <- "/"
-                    }
-                    |> Async.StartImmediate
+                    match map |> Map.tryPick (fun _ r -> if r.Plate = plate then Some r else None) with
+                    | None -> JS.Alert("Plate not found")
+                    | Some record ->
+                        async {
+                            do! Remoting.LeaveCar record.Spot
+                            let cur = parkedSpots.Value
+                            parkedSpots.Value <- cur.Remove record.Spot
+                            JS.Alert("Payment successful!")
+                            JS.Window.Location.Href <- "/"
+                        }
+                        |> Async.StartImmediate
                 )
             ] [
                 text "Pay"

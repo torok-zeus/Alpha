@@ -8,7 +8,7 @@ open WebSharper.UI.Html
 
 type EndPoint =
     | [<EndPoint "/">] Home
-    | [<EndPoint "/payment/{spot}">] Payment of string
+    | [<EndPoint "/payment">] Payment
 
 module Site =
 
@@ -18,11 +18,10 @@ module Site =
            :: [client <@ Client.Main () @>]
         )
 
-    let PaymentPage spot ctx =
+    let PaymentPage ctx =
         Content.Page(
-            h1 [] [text ("Payment for parking spot:"+spot)]
-            
-            :: [client <@ Client.PaymentMain spot @>]
+            h1 [] [text ""]
+            :: [client <@ Client.PaymentMain () @>]
         )
    
     [<Website>]
@@ -31,5 +30,5 @@ module Site =
            Sitelet.Infer <| fun ctx endpoint ->
                match endpoint with
                | Home -> HomePage ctx
-               | Payment spot -> PaymentPage spot ctx
+               | Payment -> PaymentPage ctx
         ]
