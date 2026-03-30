@@ -16,8 +16,8 @@ module Client =
         ] [
             a [
                 attr.style "color:white; cursor:pointer"
-                on.click (fun _ _ -> JS.Window.Location.Href <- "/payment")
-            ] [text "Home"]
+                on.click (fun _ _ -> JS.Window.Location.Href <- "/")
+            ] [text "Parking Spaces"]
 
             a [
                 attr.style "color:white; cursor:pointer"
