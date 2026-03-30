@@ -728,8 +728,8 @@ let _c_1=Lazy((_i) => class $StartupCode_Client {
   static MenuBar;
   static {
     this.MenuBar=Doc.Element("div", [Attr.Create("style", "width:100%; padding:10px; background:#333; color:white; display:flex; gap:20px")], [Doc.Element("a", [Attr.Create("style", "color:white; cursor:pointer"), Handler("click", () =>() => {
-      globalThis.location.href="/payment";
-    })], [Doc.TextNode("Home")]), Doc.Element("a", [Attr.Create("style", "color:white; cursor:pointer"), Handler("click", () =>() => {
+      globalThis.location.href="/";
+    })], [Doc.TextNode("Parking Spaces")]), Doc.Element("a", [Attr.Create("style", "color:white; cursor:pointer"), Handler("click", () =>() => {
       globalThis.location.href="/payment";
     })], [Doc.TextNode("Payment")])]);
     this.selectedSpot=_c.Create_1("is not selected");
