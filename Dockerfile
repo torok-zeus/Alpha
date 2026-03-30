@@ -1,12 +1,23 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy fsproj and restore
+# Node.js telepítése (WebSharper F# fordítóhoz kell)
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
+
+# esbuild telepítés
+RUN npm install -g esbuild
+
+# Copy fsproj
 COPY Alpha.fsproj .
 RUN dotnet restore
 
-# Copy everything and build
+# Copy the rest
 COPY . .
+
+# Publish
 RUN dotnet publish -c Release -o /app
 
 # Runtime image
