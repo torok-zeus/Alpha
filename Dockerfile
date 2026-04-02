@@ -1,0 +1,21 @@
+﻿# ---- Build stage ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+WORKDIR /src
+
+COPY Alpha.fsproj .
+RUN dotnet restore
+
+COPY . .
+RUN dotnet publish -c Release -o /app
+
+# ---- Runtime stage ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+WORKDIR /app
+COPY --from=build /app .
+
+ENV ASPNETCORE_URLS=http://0.0.0.0:10000
+EXPOSE 10000
+
+ENTRYPOINT ["dotnet", "Alpha.dll"]
