@@ -11,14 +11,12 @@ RUN apt-get update && apt-get install -y \
     libkrb5-3 \
     libgssapi-krb5-2
 
-COPY Alpha.fsproj ./Alpha.fsproj
-RUN dotnet restore Alpha.fsproj
-
 COPY . .
+
+RUN dotnet restore Alpha.fsproj
 
 RUN dotnet publish Alpha.fsproj -c Release -o /app
 
-# ---- Runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
