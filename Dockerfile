@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     zlib1g \
     unzip \
-    curl
+    curl \
+    libssl-dev \
+    libkrb5-3 \
+    libgssapi-krb5-2
 
 COPY Alpha.fsproj ./Alpha.fsproj
 RUN dotnet restore Alpha.fsproj
