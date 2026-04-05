@@ -3,6 +3,7 @@ import { Map } from "../WebSharper.UI/WebSharper.UI.View.js"
 import { TryPick, OfArray } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.MapModule.js"
 import { Some } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1.js"
 import { toInt } from "../WebSharper.StdLib/Microsoft.FSharp.Core.Operators.js"
+import { Parse } from "../WebSharper.StdLib/WebSharper.DateTimeHelpers.js"
 import { StartImmediate, Delay, Bind, Zero } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import { LoadParking, LeaveCar, ParkCar } from "./Alpha.Remoting.js"
 import { ofSeq } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ArrayModule.js"
@@ -11,6 +12,8 @@ import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
 import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
 import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
 import { delay, map as map_1 } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
+import { New } from "./Alpha.ParkingRecordDto.js"
+import { DateFormatter } from "../WebSharper.StdLib/WebSharper.JavaScript.Pervasives.DateTime.js"
 import $StartupCode_Client from "./$StartupCode_Client.js"
 export function PaymentMain(){
   const inputPlate=Var.Create_1("");
@@ -18,7 +21,7 @@ export function PaymentMain(){
     const m=TryPick((_1, _2) => _2.Plate==plate?Some(_2):null, parkedSpots().Get());
     if(m!=null&&m.$==1){
       const record=m.$0;
-      const minutes=toInt((Date.now()-record.StartTime)/6E4);
+      const minutes=toInt((Date.now()-Parse(record.StartTime))/6E4);
       return"Plate: "+String(record.Plate)+" | Spot: "+String(record.Spot)+" | Minutes: "+String(minutes)+" | Price: "+String(toInt(minutes/60*300))+" FT";
     }
     else return" No such var found.";
@@ -56,11 +59,7 @@ export function Main(){
     const plate=plateNumber().Get();
     const current=parkedSpots().Get();
     return spot=="is not selected"?alert("First choose a parking space"):plate==""?alert("Enter your license plate"):current.ContainsKey(spot)?alert("This parking space is already occupied!"):StartImmediate(Delay(() => Bind(ParkCar(spot, plate), () => {
-      const newRecord={
-        Spot:spot, 
-        Plate:plate, 
-        StartTime:Date.now()
-      };
+      const newRecord=New(spot, plate, DateFormatter(Date.now(), "o"));
       parkedSpots().Set(current.Add_1(spot, newRecord));
       plateNumber().Set("");
       selectedSpot().Set("is not selected");

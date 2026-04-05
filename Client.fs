@@ -26,7 +26,7 @@ module Client =
         ]
     let selectedSpot=Var.Create("is not selected")
     let plateNumber = Var.Create ""
-    let parkedSpots = Var.Create<Map<string, ParkingRecord>>(Map.empty)
+    let parkedSpots = Var.Create<Map<string, ParkingRecordDto>>(Map.empty)
 
     let parkingSpots =
         ["A1";"A2";"A3";"A4";"A5";"B1";"B2";"B3";"B4";"B5"]
@@ -128,7 +128,7 @@ module Client =
                                 {
                                   Spot = spot
                                   Plate = plate
-                                  StartTime = System.DateTime.Now
+                                  StartTime = System.DateTime.Now.ToString("o")
                                 }
 
                             parkedSpots.Value <- current.Add(spot, newRecord)
@@ -155,7 +155,8 @@ module Client =
                     " No such var found."
                 | Some record ->
                     let now = System.DateTime.Now
-                    let diff = now - record.StartTime
+                    let start = System.DateTime.Parse(record.StartTime)
+                    let diff = now - start
                     let minutes = int diff.TotalMinutes
                     let price = int ((float minutes / 60.0) * 300.0)
 
