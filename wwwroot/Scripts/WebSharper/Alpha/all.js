@@ -14,11 +14,7 @@ export function Main(){
     const plate=plateNumber().Get();
     const current=parkedSpots().Get();
     return spot=="is not selected"?alert("First choose a parking space"):plate==""?alert("Enter your license plate"):current.ContainsKey(spot)?alert("This parking space is already occupied!"):StartImmediate(Delay(() => Bind(ParkCar(spot, plate), () => {
-      const newRecord={
-        Spot:spot, 
-        Plate:plate, 
-        StartTime:Date.now()
-      };
+      const newRecord=New(spot, plate, DateFormatter(Date.now(), "o"));
       parkedSpots().Set(current.Add_1(spot, newRecord));
       plateNumber().Set("");
       selectedSpot().Set("is not selected");
@@ -32,7 +28,7 @@ export function PaymentMain(){
     const m=TryPick((_1, _2) => _2.Plate==plate?Some(_2):null, parkedSpots().Get());
     if(m!=null&&m.$==1){
       const record=m.$0;
-      const minutes=toInt((Date.now()-record.StartTime)/6E4);
+      const minutes=toInt((Date.now()-Parse(record.StartTime))/6E4);
       return"Plate: "+String(record.Plate)+" | Spot: "+String(record.Spot)+" | Minutes: "+String(minutes)+" | Price: "+String(toInt(minutes/60*300))+" FT";
     }
     else return" No such var found.";
@@ -95,7 +91,7 @@ function range(min, max_1){
   return count<=0?[]:init_1(count, (x) => x+min);
 }
 function LoadParking(){
-  return Bind((new AjaxRemotingProvider()).Async("Remoting/LoadParking", []), (o) => Return(((DecodeList(DecodeJson_ParkingRecord))())(o)));
+  return Bind((new AjaxRemotingProvider()).Async("Remoting/LoadParking", []), (o) => Return(((DecodeList(Id()))())(o)));
 }
 function ParkCar(spot, plate){
   return(new AjaxRemotingProvider()).Async("Remoting/ParkCar", [spot, plate]);
@@ -183,6 +179,13 @@ function tail(l){
 }
 function listEmpty(){
   return FailWith("The input list was empty.");
+}
+function New(Spot, Plate, StartTime){
+  return{
+    Spot:Spot, 
+    Plate:Plate, 
+    StartTime:StartTime
+  };
 }
 function TryPick(f, m){
   return tryPick((kv) => f(kv.K, kv.V), m);
@@ -279,6 +282,23 @@ function distinctBy(f, s){
 }
 function collect(f, s){
   return concat(map_1(f, s));
+}
+function nth(index, s){
+  if(index<0)FailWith("negative index requested");
+  let pos=-1;
+  const e=Get(s);
+  try {
+    while(pos<index)
+      {
+        !e.MoveNext()?insufficient():void 0;
+        pos=pos+1;
+      }
+    return e.Current;
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
 }
 function forall2(p, s1, s2){
   return!exists2((_1, _2) =>!p(_1, _2), s1, s2);
@@ -523,7 +543,7 @@ function Delay(mk){
 }
 function Bind(r, f){
   return checkCancel((c) => {
-    r(New((a) => {
+    r(New_1((a) => {
       if(a.$==0){
         const x=a.$0;
         scheduler().Fork(() => {
@@ -547,7 +567,7 @@ function Zero(){
 function StartImmediate(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
-  if(!ct.c)c(New((a) => {
+  if(!ct.c)c(New_1((a) => {
     if(a.$==1)UncaughtAsyncError(a.$0);
   }, ct));
 }
@@ -620,13 +640,16 @@ function Start(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
   scheduler().Fork(() => {
-    if(!ct.c)c(New((a) => {
+    if(!ct.c)c(New_1((a) => {
       if(a.$==1)UncaughtAsyncError(a.$0);
     }, ct));
   });
 }
 class FSharpList {
   static Empty=Create_1(FSharpList, {$:0});
+  get_Item(x){
+    return nth(x, this);
+  }
   static Cons(Head, Tail){
     return Create_1(FSharpList, {
       $:1, 
@@ -695,27 +718,8 @@ function DecodeList(decEl){
     return init(length(a), (i) => e(get(a, i)));
   };
 }
-function DecodeRecord(t, fields){
-  return() =>(x) => {
-    const o={};
-    iter_1((_1) => {
-      const name=_1[0];
-      const dec=_1[1];
-      const kind=_1[2];
-      return kind===0?x.hasOwnProperty(name)?void(o[name]=(dec())(x[name])):FailWith("Missing mandatory field: "+name):kind===1?void(o[name]=x.hasOwnProperty(name)?Some((dec())(x[name])):null):kind===2?x.hasOwnProperty(name)?void(o[name]=(dec())(x[name])):null:kind===3?x[name]===void 0?void(o[name]=(dec())(x[name])):null:FailWith("Invalid field option kind");
-    }, fields);
-    return t===void 0?o:t(o);
-  };
-}
 function Id(){
   return() =>(x) => x;
-}
-function DecodeDateTime(){
-  return() =>(x) => x.hasOwnProperty("d")?(new Date(x.d)).getTime():(new Date(x)).getTime();
-}
-let Decoder_ParkingRecord;
-function DecodeJson_ParkingRecord(){
-  return Decoder_ParkingRecord?Decoder_ParkingRecord:Decoder_ParkingRecord=(DecodeRecord(void 0, [["Spot", Id(), 0], ["Plate", Id(), 0], ["StartTime", DecodeDateTime(), 0]]))();
 }
 let _c_1=Lazy((_i) => class $StartupCode_Client {
   static {
@@ -1001,7 +1005,7 @@ function Branch(node, left, right){
   const b=right==null?0:right.Height;
   let _1=Compare(a, b)===1?a:b;
   let _2=1+_1;
-  return New_2(node, left, right, _2, 1+(left==null?0:left.Count)+(right==null?0:right.Count));
+  return New_3(node, left, right, _2, 1+(left==null?0:left.Count)+(right==null?0:right.Count));
 }
 function Enumerate(flip, t){
   function gen(t_1, spine){
@@ -1045,6 +1049,238 @@ class Pair {
   static New(Key, Value_1){
     return Create_1(Pair, {Key:Key, Value:Value_1});
   }
+}
+function DateFormatter(date, format){
+  const d=new Date(date);
+  switch(format){
+    case"D":
+      return String(longDays().get_Item(d.getDay()))+", "+padLeft(2, String(d.getDate()))+" "+String(longMonths().get_Item(d.getMonth()))+" "+String(d.getFullYear());
+    case"d":
+      return padLeft(2, String(d.getMonth()+1))+"/"+padLeft(2, String(d.getDate()))+"/"+String(d.getFullYear());
+    case"T":
+      return padLeft(2, String(d.getHours()))+":"+padLeft(2, String(d.getMinutes()))+":"+padLeft(2, String(d.getSeconds()));
+    case"t":
+      return padLeft(2, String(d.getHours()))+":"+padLeft(2, String(d.getMinutes()));
+    case"o":
+    case"O":
+      return String(d.getFullYear())+"-"+padLeft(2, String(d.getMonth()+1))+"-"+padLeft(2, String(d.getDate()))+"T"+padLeft(2, String(d.getHours()))+":"+padLeft(2, String(d.getMinutes()))+":"+padLeft(2, String(d.getSeconds()))+"."+padLeft(3, String(d.getMilliseconds()))+dateOffsetString(d);
+    default:
+      return dateToStringWithCustomFormat(d, format);
+  }
+}
+function longDays(){
+  return _c_3.longDays;
+}
+function padLeft(minLength, x){
+  return x.length<minLength?replicate(minLength-x.length, "0")+x:x;
+}
+function longMonths(){
+  return _c_3.longMonths;
+}
+function dateOffsetString(d){
+  const offset=d.getTimezoneOffset()*-60000;
+  const offset_1=Math.abs(offset);
+  return(offset<0?"-":"+")+padLeft(2, String(toInt(offset_1/3600000)))+":"+padLeft(2, String(toInt(offset_1%3600000/60000)));
+}
+function dateToStringWithCustomFormat(d, format){
+  let cursorPos=0;
+  let tokenLength=0;
+  let result="";
+  const appendToResult=(s) => {
+    result=result+s;
+  };
+  while(cursorPos<format.length)
+    ((() => {
+      const token=format[cursorPos];
+      switch(token){
+        case"d":
+          tokenLength=parseRepeatToken(format, cursorPos, "d");
+          cursorPos=cursorPos+tokenLength;
+          switch(tokenLength){
+            case 1:
+              return appendToResult(String(d.getDate()));
+            case 2:
+              return appendToResult(padLeft(2, String(d.getDate())));
+            case 3:
+              return appendToResult(String(shortDays().get_Item(d.getDay())));
+            default:
+            case 4:
+              return appendToResult(String(longDays().get_Item(d.getDay())));
+          }
+          break;
+        case"f":
+          tokenLength=parseRepeatToken(format, cursorPos, "f");
+          cursorPos=cursorPos+tokenLength;
+          switch(tokenLength){
+            case 3:
+            case 2:
+            case 1:
+              const precision=toInt(10**(3-tokenLength));
+              return appendToResult(padLeft(tokenLength, String(d.getMilliseconds()/precision>>0)));
+            case 7:
+            case 6:
+            case 5:
+            case 4:
+              return appendToResult(padRight(tokenLength, String(d.getMilliseconds())));
+            default:
+              return FailWith("Input string was not in a correct format.");
+          }
+          break;
+        case"F":
+          tokenLength=parseRepeatToken(format, cursorPos, "F");
+          cursorPos=cursorPos+tokenLength;
+          switch(tokenLength){
+            case 3:
+            case 2:
+            case 1:
+              const precision_1=toInt(10**(3-tokenLength));
+              const value=d.getMilliseconds()/precision_1>>0;
+              return value!==0?appendToResult(padLeft(tokenLength, String(value))):null;
+            case 7:
+            case 6:
+            case 5:
+            case 4:
+              const value_1=d.getMilliseconds();
+              return value_1!==0?appendToResult(padLeft(3, String(value_1))):null;
+            default:
+              return FailWith("Input string was not in a correct format.");
+          }
+          break;
+        case"g":
+          tokenLength=parseRepeatToken(format, cursorPos, "g");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult("A.D.");
+        case"h":
+          tokenLength=parseRepeatToken(format, cursorPos, "h");
+          cursorPos=cursorPos+tokenLength;
+          const hours=d.getHours()%12;
+          return appendToResult(tokenLength===1||tokenLength===2&&false?hours===0?"12":String(hours):hours===0?"12":padLeft(2, String(hours)));
+        case"H":
+          tokenLength=parseRepeatToken(format, cursorPos, "H");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(tokenLength===1||tokenLength===2&&false?String(d.getHours()):padLeft(2, String(d.getHours())));
+        case"K":
+          tokenLength=parseRepeatToken(format, cursorPos, "K");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(replicate(tokenLength, dateOffsetString(d)));
+        case"m":
+          tokenLength=parseRepeatToken(format, cursorPos, "m");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(tokenLength===1||tokenLength===2&&false?String(d.getMinutes()):padLeft(2, String(d.getMinutes())));
+        case"M":
+          let _1;
+          tokenLength=parseRepeatToken(format, cursorPos, "M");
+          cursorPos=cursorPos+tokenLength;
+          switch(tokenLength){
+            case 1:
+              _1=String(d.getMonth()+1);
+              break;
+            case 2:
+              _1=padLeft(2, String(d.getMonth()+1));
+              break;
+            case 3:
+              _1=String(shortMonths().get_Item(d.getMonth()));
+              break;
+            default:
+            case 4:
+              _1=String(longMonths().get_Item(d.getMonth()));
+              break;
+          }
+          return appendToResult(_1);
+        case"s":
+          tokenLength=parseRepeatToken(format, cursorPos, "s");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(tokenLength===1||tokenLength===2&&false?String(d.getSeconds()):padLeft(2, String(d.getSeconds())));
+        case"t":
+          tokenLength=parseRepeatToken(format, cursorPos, "t");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(tokenLength===1||tokenLength===2&&false?d.getHours()<12?"A":"P":d.getHours()<12?"AM":"PM");
+        case"y":
+          tokenLength=parseRepeatToken(format, cursorPos, "y");
+          cursorPos=cursorPos+tokenLength;
+          return appendToResult(tokenLength===1?String(d.getFullYear()%100):tokenLength===2?padLeft(2, String(d.getFullYear()%100)):padLeft(tokenLength, String(d.getFullYear())));
+        case"z":
+          tokenLength=parseRepeatToken(format, cursorPos, "z");
+          cursorPos=cursorPos+tokenLength;
+          const utcOffsetText=dateOffsetString(d);
+          const sign=Substring(utcOffsetText, 0, 1);
+          const hours_1=Substring(utcOffsetText, 1, 2);
+          const minutes=Substring(utcOffsetText, 4, 2);
+          return appendToResult(tokenLength===1?sign+(StartsWith(hours_1, "0")?hours_1.substring(1):hours_1):tokenLength===2?sign+hours_1:sign+hours_1+":"+minutes);
+        case":":
+          cursorPos=cursorPos+1;
+          return appendToResult(":");
+        case"/":
+          cursorPos=cursorPos+1;
+          return appendToResult("/");
+        case"'":
+        case"\"":
+          const p=parseQuotedString(format, cursorPos);
+          cursorPos=cursorPos+p[1];
+          return appendToResult(p[0]);
+        case"%":
+          const nextChar=parseNextChar(format, cursorPos);
+          return nextChar!=null&&nextChar.$0!=="%"?(cursorPos=cursorPos+2,appendToResult(dateToStringWithCustomFormat(d, nextChar.$0))):FailWith("Invalid format string");
+        case"\\":
+          const m=parseNextChar(format, cursorPos);
+          if(m==null)return FailWith("Invalid format string");
+          else {
+            const nextChar2=m.$0;
+            cursorPos=cursorPos+2;
+            return appendToResult(nextChar2);
+          }
+          break;
+        default:
+          appendToResult(token);
+          {
+            cursorPos=cursorPos+1;
+            return;
+          }
+          break;
+      }
+    })());
+  return result;
+}
+function parseRepeatToken(format, pos, patternChar){
+  let tokenLength=0;
+  let internalPos=pos;
+  while(internalPos<format.length&&format[internalPos]===patternChar)
+    {
+      internalPos=internalPos+1;
+      tokenLength=tokenLength+1;
+    }
+  return tokenLength;
+}
+function shortDays(){
+  return _c_3.shortDays;
+}
+function padRight(minLength, x){
+  return x.length<minLength?x+replicate(minLength-x.length, "0"):x;
+}
+function shortMonths(){
+  return _c_3.shortMonths;
+}
+function parseQuotedString(format, pos){
+  const quoteChar=format[pos];
+  let result="";
+  let foundQuote=false;
+  let pos_1=pos;
+  let earlyBreak=false;
+  while(pos_1<format.length&&!earlyBreak)
+    {
+      pos_1=pos_1+1;
+      const currentChar=format[pos_1];
+      if(currentChar===quoteChar){
+        foundQuote=true;
+        earlyBreak=true;
+      }
+      else currentChar==="\\"?pos_1<format.length?(pos_1=pos_1+1,result=result+format[pos_1]):FailWith("Invalid string format"):result=result+currentChar;
+    }
+  if(!foundQuote)FailWith("Invalid string format could not find matching quote for "+String(quoteChar));
+  return[result, pos_1-pos+1];
+}
+function parseNextChar(format, pos){
+  return pos>=format.length-1?null:Some(format[pos+1]);
 }
 class ConcreteVar extends Var {
   isConst;
@@ -1215,7 +1451,15 @@ function ValueAndForever(snap){
   const m=snap.s;
   return m!=null&&m.$==0?Some([m.$0, true]):m!=null&&m.$==2?Some([m.$0, false]):null;
 }
-function New(k, ct){
+function Parse(s){
+  const m=TryParse(s);
+  return m!=null&&m.$==1?m.$0:FailWith("Failed to parse date string.");
+}
+function TryParse(s){
+  const d=Date.parse(s);
+  return isNaN(d)?null:Some(d);
+}
+function New_1(k, ct){
   return{k:k, ct:ct};
 }
 function No(Item){
@@ -1251,7 +1495,7 @@ let _c_2=Lazy((_i) => class $StartupCode_Concurrency {
   static scheduler;
   static noneCT;
   static {
-    this.noneCT=New_1(false, []);
+    this.noneCT=New_2(false, []);
     this.scheduler=new Scheduler();
     this.defCTS=[new CancellationTokenSource()];
     this.Zero=Return();
@@ -1260,7 +1504,7 @@ let _c_2=Lazy((_i) => class $StartupCode_Concurrency {
     };
   }
 });
-function New_1(IsCancellationRequested, Registrations){
+function New_2(IsCancellationRequested, Registrations){
   return{c:IsCancellationRequested, r:Registrations};
 }
 function InsertAt(parent, pos, node){
@@ -1447,7 +1691,7 @@ function AppendTree(a, b){
   }
 }
 function EmptyAttr(){
-  return _c_3.EmptyAttr;
+  return _c_4.EmptyAttr;
 }
 function Insert(elem, tree){
   const nodes=[];
@@ -1470,7 +1714,7 @@ function Insert(elem, tree){
   }
   loop(tree);
   const arr=nodes.slice(0);
-  let _1=New_3(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
+  let _1=New_4(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
     iter((f) => {
       f(el);
     }, oar);
@@ -1512,7 +1756,7 @@ function Sync(elem, dyn){
     d.NSync(elem);
   }, dyn.DynNodes);
 }
-function New_2(Node_1, Left, Right, Height, Count){
+function New_3(Node_1, Left, Right, Height, Count){
   return{
     Node:Node_1, 
     Left:Left, 
@@ -1526,10 +1770,10 @@ function Int(){
   return counter();
 }
 function set_counter(_1){
-  _c_4.counter=_1;
+  _c_5.counter=_1;
 }
 function counter(){
-  return _c_4.counter;
+  return _c_5.counter;
 }
 function Ready(Item1, Item2){
   return{
@@ -1585,9 +1829,6 @@ function init_2(size, f){
   for(let i=0, _1=size-1;i<=_1;i++)r[i]=f(i);
   return r;
 }
-function iter_1(f, arr){
-  for(let i=0, _1=arr.length-1;i<=_1;i++)f(arr[i]);
-}
 function ofSeq_1(xs){
   if(xs instanceof Array)return xs.slice();
   else if(xs instanceof FSharpList)return ofList(xs);
@@ -1618,6 +1859,11 @@ function ofList(xs){
     }
   return q;
 }
+function create(size, value){
+  const r=new Array(size);
+  for(let i=0, _1=size-1;i<=_1;i++)r[i]=value;
+  return r;
+}
 function distinctBy_1(f, a){
   return ofSeq_1(distinctBy(f, a));
 }
@@ -1631,6 +1877,9 @@ function foldBack(f, arr, zero){
   const len=arr.length;
   for(let i=1, _1=len;i<=_1;i++)acc=f(arr[len-i], acc);
   return acc;
+}
+function iter_1(f, arr){
+  for(let i=0, _1=arr.length-1;i<=_1;i++)f(arr[i]);
 }
 function choose(f, arr){
   const q=[];
@@ -1655,11 +1904,6 @@ function filter(f, arr){
   for(let i=0, _1=arr.length-1;i<=_1;i++)if(f(arr[i]))r.push(arr[i]);
   return r;
 }
-function create(size, value){
-  const r=new Array(size);
-  for(let i=0, _1=size-1;i<=_1;i++)r[i]=value;
-  return r;
-}
 function forall_1(f, x){
   let a=true;
   let i=0;
@@ -1682,7 +1926,7 @@ class CancellationTokenSource extends Object_1 {
     this.init=1;
   }
 }
-function TryParse(s, r){
+function TryParse_1(s, r){
   return TryParse_2(s, -2147483648, 2147483647, r);
 }
 function CreateTextNode(){
@@ -1705,7 +1949,7 @@ function LinkPrevElement(el, children){
   InsertDoc(el.parentNode, children, el);
 }
 function CreateDelimitedRunState(ldelim, rdelim, doc){
-  return New_4(get_Empty_1(), CreateDelimitedElemNode(ldelim, rdelim, EmptyAttr(), doc));
+  return New_5(get_Empty_1(), CreateDelimitedElemNode(ldelim, rdelim, EmptyAttr(), doc));
 }
 function PerformAnimatedUpdate(childrenOnly, st, doc){
   return get_UseAnimations()?Delay(() => {
@@ -1910,7 +2154,7 @@ function Obsolete(sn){
   }
 }
 function StringApply(){
-  return _c_3.StringApply;
+  return _c_4.StringApply;
 }
 function ApplyValue(get_1, set_1, var_1){
   let expectedValue;
@@ -1935,22 +2179,22 @@ function ApplyValue(get_1, set_1, var_1){
   }, var_1.View)];
 }
 function StringSet(){
-  return _c_3.StringSet;
+  return _c_4.StringSet;
 }
 function StringGet(){
-  return _c_3.StringGet;
+  return _c_4.StringGet;
 }
 function StringListSet(){
-  return _c_3.StringListSet;
+  return _c_4.StringListSet;
 }
 function StringListGet(){
-  return _c_3.StringListGet;
+  return _c_4.StringListGet;
 }
 function DateTimeSetUnchecked(){
-  return _c_3.DateTimeSetUnchecked;
+  return _c_4.DateTimeSetUnchecked;
 }
 function DateTimeGetUnchecked(){
-  return _c_3.DateTimeGetUnchecked;
+  return _c_4.DateTimeGetUnchecked;
 }
 function FileApplyValue(get_1, set_1, var_1){
   let expectedValue;
@@ -1972,34 +2216,64 @@ function FileApplyValue(get_1, set_1, var_1){
   }, var_1.View)];
 }
 function FileSetUnchecked(){
-  return _c_3.FileSetUnchecked;
+  return _c_4.FileSetUnchecked;
 }
 function FileGetUnchecked(){
-  return _c_3.FileGetUnchecked;
+  return _c_4.FileGetUnchecked;
 }
 function IntSetUnchecked(){
-  return _c_3.IntSetUnchecked;
+  return _c_4.IntSetUnchecked;
 }
 function IntGetUnchecked(){
-  return _c_3.IntGetUnchecked;
+  return _c_4.IntGetUnchecked;
 }
 function IntSetChecked(){
-  return _c_3.IntSetChecked;
+  return _c_4.IntSetChecked;
 }
 function IntGetChecked(){
-  return _c_3.IntGetChecked;
+  return _c_4.IntGetChecked;
 }
 function FloatSetUnchecked(){
-  return _c_3.FloatSetUnchecked;
+  return _c_4.FloatSetUnchecked;
 }
 function FloatGetUnchecked(){
-  return _c_3.FloatGetUnchecked;
+  return _c_4.FloatGetUnchecked;
 }
 function FloatSetChecked(){
-  return _c_3.FloatSetChecked;
+  return _c_4.FloatSetChecked;
 }
 function FloatGetChecked(){
-  return _c_3.FloatGetChecked;
+  return _c_4.FloatGetChecked;
+}
+let _c_3=Lazy((_i) => class Pervasives {
+  static {
+    _c_3=_i(this);
+  }
+  static longMonths;
+  static shortMonths;
+  static longDays;
+  static shortDays;
+  static {
+    this.shortDays=ofArray(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+    this.longDays=ofArray(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
+    this.shortMonths=ofArray(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
+    this.longMonths=ofArray(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
+  }
+});
+function replicate(count, s){
+  return create(count, s).join("");
+}
+function Substring(s, ix, ct){
+  return s.substr(ix, ct);
+}
+function StartsWith(t, s){
+  return t.substring(0, s.length)==s;
+}
+function forall_2(f, s){
+  return forall(f, protect(s));
+}
+function protect(s){
+  return s==null?"":s;
 }
 class Exception extends Object_1 { }
 class OperationCanceledException extends Error {
@@ -2158,9 +2432,9 @@ class DynamicAttrNode extends Object_1 {
     }, view);
   }
 }
-let _c_3=Lazy((_i) => class Client {
+let _c_4=Lazy((_i) => class Client {
   static {
-    _c_3=_i(this);
+    _c_4=_i(this);
   }
   static FloatApplyChecked;
   static FloatGetChecked;
@@ -2224,7 +2498,7 @@ let _c_3=Lazy((_i) => class Client {
       if(isBlank(s_8))return Some(-8640000000000000);
       else {
         o=0;
-        const m_1=TryParse_1(s_8);
+        const m_1=TryParse(s_8);
         let _1=m_1!=null&&m_1.$==1&&(o=m_1.$0,true);
         m=[_1, o];
         return m[0]?Some(m[1]):null;
@@ -2265,7 +2539,7 @@ let _c_3=Lazy((_i) => class Client {
       const s_8=el.value;
       if(isBlank(s_8))_1=(el.checkValidity?el.checkValidity():true)?CheckedInput.Blank(s_8):CheckedInput.Invalid(s_8);
       else {
-        const m=(o=0,[TryParse(s_8, {get:() => o, set:(v) => {
+        const m=(o=0,[TryParse_1(s_8, {get:() => o, set:(v) => {
           o=v;
         }}), o]);
         _1=m[0]?CheckedInput.Valid(m[1], s_8):CheckedInput.Invalid(s_8);
@@ -2308,9 +2582,9 @@ let _c_3=Lazy((_i) => class Client {
     this.FloatApplyChecked=(v) => ApplyValue(g_7, s_7, v);
   }
 });
-let _c_4=Lazy((_i) => class $StartupCode_Abbrev {
+let _c_5=Lazy((_i) => class $StartupCode_Abbrev {
   static {
-    _c_4=_i(this);
+    _c_5=_i(this);
   }
   static counter;
   static {
@@ -2318,7 +2592,7 @@ let _c_4=Lazy((_i) => class $StartupCode_Abbrev {
   }
 });
 function AjaxProvider(){
-  return _c_5.AjaxProvider;
+  return _c_6.AjaxProvider;
 }
 function makePayload(data){
   return JSON.stringify(data);
@@ -2327,7 +2601,7 @@ function makeHeaders(headers){
   return NewFromSeq(map_2((_1) =>[_1[0], _1[1]], distinctBy_1((t) => t[0], headers.concat([["content-type", "application/json"]]))));
 }
 function EndPoint(){
-  return _c_5.EndPoint;
+  return _c_6.EndPoint;
 }
 function ajax(async, url, headers, data, ok, err, csrf){
   let xhr=new XMLHttpRequest();
@@ -2351,7 +2625,7 @@ function ajax(async, url, headers, data, ok, err, csrf){
   };
   xhr.send(data);
 }
-function New_3(DynElem, DynFlags, DynNodes, OnAfterRender){
+function New_4(DynElem, DynFlags, DynNodes, OnAfterRender){
   const _1={
     DynElem:DynElem, 
     DynFlags:DynFlags, 
@@ -2376,11 +2650,11 @@ function arrContains(item, arr){
     else i=i+1;
   return!c;
 }
-function nonNegative(){
-  return FailWith("The input must be non-negative.");
-}
 function insufficient(){
   return FailWith("The input sequence has an insufficient number of elements.");
+}
+function nonNegative(){
+  return FailWith("The input must be non-negative.");
 }
 class Updates_1 {
   c;
@@ -2430,9 +2704,9 @@ class CheckedInput {
   $0;
   $1;
 }
-let _c_5=Lazy((_i) => class $StartupCode_Remoting {
+let _c_6=Lazy((_i) => class $StartupCode_Remoting {
   static {
-    _c_5=_i(this);
+    _c_6=_i(this);
   }
   static AjaxProvider;
   static EndPoint;
@@ -2485,7 +2759,7 @@ function get_Empty(){
   return Anim(Empty());
 }
 function BatchUpdatesEnabled(){
-  return _c_6.BatchUpdatesEnabled;
+  return _c_7.BatchUpdatesEnabled;
 }
 function StartProcessor(procAsync){
   const st=[0];
@@ -2614,18 +2888,8 @@ class HashSet extends Object_1 {
 function Clear(a){
   a.splice(0, length(a));
 }
-function forall_2(f, s){
-  return forall(f, protect(s));
-}
-function protect(s){
-  return s==null?"":s;
-}
 function IsWhiteSpace(c){
   return c.match(new RegExp("\\s"))!==null;
-}
-function TryParse_1(s){
-  const d=Date.parse(s);
-  return isNaN(d)?null:Some(d);
 }
 function TryParse_2(s, min, max_1, r){
   const x=+s;
@@ -2640,7 +2904,7 @@ class XhrProvider extends Object_1 {
     });
   }
 }
-function New_4(PreviousNodes, Top){
+function New_5(PreviousNodes, Top){
   return{PreviousNodes:PreviousNodes, Top:Top};
 }
 function get_Empty_1(){
@@ -2707,7 +2971,7 @@ function Intersect(a, a_1){
   return NodeSet(Intersect_1(a.$0, a_1.$0));
 }
 function UseAnimations(){
-  return _c_7.UseAnimations;
+  return _c_8.UseAnimations;
 }
 function Actions(a){
   return ConcatActions(choose((a_1) => a_1.$==1?Some(a_1.$0):null, ToArray_1(a.$0)));
@@ -2747,18 +3011,18 @@ function Prolong(nextDuration, anim){
   const last=Create(() => anim.Compute(anim.Duration));
   return{Compute:(t) => t>=dur?last.f():comp(t), Duration:nextDuration};
 }
-let _c_6=Lazy((_i) => class Proxy {
+let _c_7=Lazy((_i) => class Proxy {
   static {
-    _c_6=_i(this);
+    _c_7=_i(this);
   }
   static BatchUpdatesEnabled;
   static {
     this.BatchUpdatesEnabled=true;
   }
 });
-let _c_7=Lazy((_i) => class $StartupCode_Animation {
+let _c_8=Lazy((_i) => class $StartupCode_Animation {
   static {
-    _c_7=_i(this);
+    _c_8=_i(this);
   }
   static UseAnimations;
   static CubicInOut;
@@ -2802,7 +3066,7 @@ function Concat_1(xs){
   return TreeReduce(Empty(), Append_1, x);
 }
 function Empty(){
-  return _c_8.Empty;
+  return _c_9.Empty;
 }
 class Easing extends Object_1 {
   transformTime;
@@ -2903,7 +3167,7 @@ function concat_1(o){
   return r;
 }
 function Create(f){
-  return New_5(false, f, forceLazy);
+  return New_6(false, f, forceLazy);
 }
 function forceLazy(){
   const v=this.v();
@@ -2915,16 +3179,16 @@ function forceLazy(){
 function cachedLazy(){
   return this.v;
 }
-let _c_8=Lazy((_i) => class $StartupCode_AppendList {
+let _c_9=Lazy((_i) => class $StartupCode_AppendList {
   static {
-    _c_8=_i(this);
+    _c_9=_i(this);
   }
   static Empty;
   static {
     this.Empty={$:0};
   }
 });
-function New_5(created, evalOrVal, force){
+function New_6(created, evalOrVal, force){
   return{
     c:created, 
     v:evalOrVal, 
