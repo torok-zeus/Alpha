@@ -54,7 +54,7 @@ export function Main(){
     parkedSpots().Set(map_2);
     return Zero();
   })), null);
-  return Doc.Element("div", [], [MenuBar(), Doc.Element("h1", [], [Doc.TextNode("Parking registry")]), Doc.Element("div", [], ofSeq_1(delay(() => map_1(spotButton, parkingSpots())))), Doc.Element("h3", [], [Doc.TextView(Map((s) =>"The parking space of your choice: "+s, selectedSpot().View))]), Doc.Element("div", [], [Doc.TextNode("Plate: "), Doc.Input([Attr.Create("placeholder", "Text here your car plate"), Attr.Create("style", "margin:5px; padding:5px")], plateNumber())]), Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px"), Handler("click", () =>() => {
+  return Doc.Element("div", [], [MenuBar(), Doc.Element("h1", [], [Doc.TextNode("Parking registry")]), Doc.Element("div", [Attr.Create("style", "\r\n                     display:grid;\r\n                     grid-template-columns:repeat(10, 80px);\r\n                     gap:10px;\r\n                     justify-content:center;\r\n                     margin-top:30px;\r\n                 ")], ofSeq_1(delay(() => map_1(spotButton, parkingSpots())))), Doc.Element("h3", [], [Doc.TextView(Map((s) =>"The parking space of your choice: "+s, selectedSpot().View))]), Doc.Element("div", [], [Doc.TextNode("Plate: "), Doc.Input([Attr.Create("placeholder", "Text here your car plate"), Attr.Create("style", "margin:5px; padding:5px")], plateNumber())]), Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px"), Handler("click", () =>() => {
     const spot=selectedSpot().Get();
     const plate=plateNumber().Get();
     const current=parkedSpots().Get();

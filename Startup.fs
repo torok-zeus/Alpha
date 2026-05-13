@@ -4,14 +4,12 @@ open Microsoft.Extensions.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open WebSharper.AspNetCore
-open WebSharper.AspNetCore.Sitelets
 open Alpha
 
 [<EntryPoint>]
 let main args =
     let builder = WebApplication.CreateBuilder(args)
-    
-    // Add services to the container.
+
     builder.Services
         .AddWebSharper()
         .AddAuthentication("WebSharper")
@@ -20,11 +18,9 @@ let main args =
 
     let app = builder.Build()
 
-    // Configure the HTTP request pipeline.
     if not (app.Environment.IsDevelopment()) then
         app.UseExceptionHandler("/Error")
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            .UseHsts()
+           .UseHsts()
         |> ignore
 
     app.UseHttpsRedirection()
@@ -33,9 +29,8 @@ let main args =
 #endif
         .UseAuthentication()
         .UseStaticFiles()
-        .UseWebSharper(fun ws -> ws.Sitelet(Site.Main) |> ignore)
+        .UseWebSharper(fun ws -> ws.Sitelet(Site.Main) |> ignore)  
     |> ignore
 
     app.Run()
-
-    0 // Exit code
+    0

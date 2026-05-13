@@ -29,7 +29,13 @@ module Client =
     let parkedSpots = Var.Create<Map<string, ParkingRecordDto>>(Map.empty)
 
     let parkingSpots =
-        ["A1";"A2";"A3";"A4";"A5";"B1";"B2";"B3";"B4";"B5"]
+        [ 'A' .. 'J' ]
+        |> List.collect (fun row ->
+            [1 .. 10]
+            |> List.map (fun col ->
+                string row + string col
+             )
+        )
 
     let spotButton spot =
         button[
@@ -80,7 +86,38 @@ module Client =
 
             h1 [] [ text "Parking registry" ]
 
-            div [] [
+            div [
+                attr.style "
+                    width: 80%;
+                    margin: 30px auto 5px auto;
+                    height: 18px;
+                    background: linear-gradient(to bottom, #555, #111);
+                    border-radius: 4px;
+                    text-align: center;
+                    color: #aaa;
+                    font-size: 12px;
+                    line-height: 18px;
+                    letter-spacing: 4px;
+                "
+            ] [ text "SCREEN" ]
+            div [
+                attr.style "
+                    width: 80%;
+                    margin: 0 auto 20px auto;
+                    height: 4px;
+                    background: black;
+                    border-radius: 2px;
+                "
+            ] []
+            div [
+                 attr.style "
+                     display:grid;
+                     grid-template-columns:repeat(10, 80px);
+                     gap:10px;
+                     justify-content:center;
+                     margin-top:30px;
+                 "
+            ] [
                 for s in parkingSpots do
                     spotButton s
             ]
