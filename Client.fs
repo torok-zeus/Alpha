@@ -36,8 +36,26 @@ module Client =
                 string row + string col
              )
         )
+    let rowPrices =
+        Map.ofList [
+            'A', 2000
+            'B', 4000
+            'C', 6000
+            'D', 7000
+            'E', 10000
+            'F', 10000
+            'G', 8000
+            'H', 6000
+            'I', 4000
+            'J', 2000
+        ]
+
+    let getPrice (spot: string) =
+        let row = spot.[0]
+        rowPrices |> Map.tryFind row |> Option.defaultValue 0
 
     let spotButton spot =
+        let price = getPrice spot
         button[
             attr.styleDyn(
                 parkedSpots.View.Map (fun map ->
@@ -63,9 +81,11 @@ module Client =
                     )
                 )
             ]
+            div [ attr.style "font-size: 10px; opacity: 0.85" ] [
+                text (string price + " Ft")
+            ]
         ]
 
-    // fő UI
     let Main () =
 
         async{
@@ -81,34 +101,24 @@ module Client =
         |> Async.StartImmediate
 
         div [] [
-
             MenuBar
-
             h1 [] [ text "Parking registry" ]
-
             div [
                 attr.style "
                     width: 80%;
-                    margin: 30px auto 5px auto;
-                    height: 18px;
-                    background: linear-gradient(to bottom, #555, #111);
+                    margin: 30px auto 20px auto;
+                    height: 40px;
+                    background: black;
                     border-radius: 4px;
                     text-align: center;
-                    color: #aaa;
-                    font-size: 12px;
-                    line-height: 18px;
-                    letter-spacing: 4px;
-                "
+                    color: white;
+                    font-size: 18px;
+                    font-weight: bold;
+                    line-height: 40px;
+                    letter-spacing: 6px;
+                    border: 2px solid #ccc;
+                 "
             ] [ text "SCREEN" ]
-            div [
-                attr.style "
-                    width: 80%;
-                    margin: 0 auto 20px auto;
-                    height: 4px;
-                    background: black;
-                    border-radius: 2px;
-                "
-            ] []
             div [
                  attr.style "
                      display:grid;
@@ -121,7 +131,6 @@ module Client =
                 for s in parkingSpots do
                     spotButton s
             ]
-
             h3 [] [
                 textView (
                     selectedSpot.View.Map(fun s ->
@@ -129,132 +138,241 @@ module Client =
                     )
                 )
             ]
-
             div [] [
                 text "Plate: "
-
                 Doc.Input[
                     attr.placeholder "Text here your car plate"
                     attr.style "margin:5px; padding:5px"
                 ] plateNumber
             ]
+            Doc.BindView (fun plate ->
+                if plate = "" then
+                    button [
+                        attr.style "margin:10px; padding:10px; background:#ccc; color:#666; border:none; cursor:not-allowed"
+                        attr.disabled "disabled"
+                    ] [ text "Enter plate first" ]
+                else
+                    button [
+                        attr.style "margin:10px; padding:10px; background:#e67e22; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer"
+                        on.click (fun _ _ ->
+                            let spot = selectedSpot.Value
+                            let plate = plateNumber.Value
+                            let current = parkedSpots.Value
 
-            button [
-                attr.style "margin:10px; padding:10px"
+                            if spot = "is not selected" then
+                                JS.Alert("First choose a parking space")
+                            elif current.ContainsKey spot then
+                                JS.Alert("This parking space is already occupied!")
+                            else
+                                async {
+                                    do! Remoting.ParkCar spot plate
 
-                on.click (fun _ _ ->
+                                    let newRecord =
+                                        {
+                                            Spot = spot
+                                            Plate = plate
+                                            StartTime = System.DateTime.Now.ToString("o")
+                                        }
 
-                    let spot = selectedSpot.Value
-                    let plate = plateNumber.Value
-                    let current = parkedSpots.Value
+                                    parkedSpots.Value <- current.Add(spot, newRecord)
+                                    plateNumber.Value <- ""
+                                    selectedSpot.Value <- "is not selected"
 
-                    if spot = "is not selected" then
-                        JS.Alert("First choose a parking space")
-
-                    elif plate = "" then
-                        JS.Alert("Enter your license plate")
-
-                    elif current.ContainsKey spot then
-                        JS.Alert("This parking space is already occupied!")
-
-                    else
-                        async{
-                            do! Remoting.ParkCar spot plate
-
-                            let newRecord =
-                                {
-                                  Spot = spot
-                                  Plate = plate
-                                  StartTime = System.DateTime.Now.ToString("o")
+                                    JS.Window.Location.Href <- "/payment?spot=" + spot
                                 }
-
-                            parkedSpots.Value <- current.Add(spot, newRecord)
-
-                            plateNumber.Value <- ""
-                            selectedSpot.Value <- "is not selected"
-                        }
-                        |> Async.StartImmediate
-                )
-            ] [
-                text "Parking"
-            ]
+                                |> Async.StartImmediate
+                        )
+                    ] [ text "🍿 Snacks" ]
+            ) plateNumber.View
         ]
 
     let PaymentMain () =
-        
-        let inputPlate = Var.Create ""
 
-        let paymentInfo =
-            inputPlate.View.Map (fun plate ->
-                let map = parkedSpots.Value
-                match map |> Map.tryPick (fun _ r -> if r.Plate = plate then Some r else None) with
-                | None ->
-                    " No such var found."
-                | Some record ->
-                    let now = System.DateTime.Now
-                    let start = System.DateTime.Parse(record.StartTime)
-                    let diff = now - start
-                    let minutes = int diff.TotalMinutes
-                    let price = int ((float minutes / 60.0) * 300.0)
+        let cart = Var.Create<Map<string, int>>(Map.empty)
+        let currentSpot =
+            let url = JS.Window.Location.Search
+            if url.Contains("spot=") then
+                url.Split('=').[1]
+            else
+                "is not selected"
+        let spotPrice = getPrice currentSpot
+        let snacks = [
+        // Food
+            ("Popcorn", 1200, "🍿")
+            ("Nachos", 1500, "🧀")
+            ("Hot Dog", 1800, "🌭")
+        // Drinks
+            ("Cola", 800, "🥤")
+            ("Water", 500, "💧")
+            ("Beer", 1000, "🍺")
+        // Sweets
+            ("Chocolate", 700, "🍫")
+            ("Gummy Bears", 600, "🍬")
+            ("Chips", 900, "🥨")
+        ]
+        let totalPrice =
+            cart.View.Map(fun cartMap ->
+                let snackTotal =
+                    snacks
+                    |> List.sumBy (fun (name, price, _) ->
+                        match cartMap |> Map.tryFind name with
+                        | Some qty -> qty * price
+                        | None -> 0
+                    )
+                snackTotal + spotPrice
+            )
+        let snackCard (name, price, emoji) =
+            div [
+                attr.style "
+                    border: 1px solid #ddd;
+                    border-radius: 12px;
+                    padding: 20px;
+                    text-align: center;
+                    background: white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                "
+            ] [
+                div [ attr.style "font-size: 40px; margin-bottom: 8px" ] [ text emoji ]
+                div [ attr.style "font-weight: bold; font-size: 16px; margin-bottom: 4px" ] [ text name ]
+                div [ attr.style "color: #888; margin-bottom: 12px" ] [ text (string price + " Ft") ]
 
-                    $"Plate: {record.Plate} | Spot: {record.Spot} | Minutes: {minutes} | Price: {price} FT"
-                )
-        async {
-            let! data = Remoting.LoadParking()
-            parkedSpots.Value <-
-                data |> List.map (fun r -> r.Spot, r) |> Map.ofList
-        }
-        |> Async.StartImmediate
-
-        div [] [
+                div [ attr.style "display: flex; align-items: center; justify-content: center; gap: 10px" ] [
+                    button [
+                        attr.style "
+                            width: 30px; height: 30px;
+                            border-radius: 50%;
+                            border: none;
+                            background: #eee;
+                            font-size: 18px;
+                            cursor: pointer;
+                        "
+                        on.click (fun _ _ ->
+                            let currentCart = cart.Value
+                            match currentCart.TryFind name with
+                            | Some qty when qty > 1 -> cart.Value <- currentCart.Add(name, qty - 1)
+                            | Some _ -> cart.Value <- currentCart.Remove name
+                            | None -> ()
+                        )
+                    ] [ text "−" ]
+                    textView (
+                        cart.View.Map(fun map ->
+                            match map.TryFind name with
+                            | Some qty -> string qty
+                            | None -> "0"
+                        )
+                    )
+                    button [
+                        attr.style "
+                            width: 30px; height: 30px;
+                            border-radius: 50%;
+                            border: none;
+                            background: #333;
+                            color: white;
+                            font-size: 18px;
+                            cursor: pointer;
+                        "
+                        on.click (fun _ _ ->
+                            let currentCart = cart.Value
+                            let currentQty = currentCart.TryFind name |> Option.defaultValue 0
+                            cart.Value <- currentCart.Add(name, currentQty + 1)
+                        )
+                    ] [ text "+" ]
+                ]
+            ]
+        div [ attr.style "background: #f5f5f5; min-height: 100vh; font-family: sans-serif" ] [
 
             MenuBar
 
-            h2 [] [text ("Payment by plate")]
+            div [ attr.style "max-width: 900px; margin: 0 auto; padding: 30px" ] [
 
-            div [] [
-                text "Plate: "
-                Doc.Input [ attr.placeholder "Enter plate"] inputPlate
-            ]
+                 h2 [ attr.style "text-align: center; margin-bottom: 30px" ] [ text "🎬 Snack Selection" ]
 
-            div [
-                attr.style "margin-top: 15px"
-            ] [
-                textView paymentInfo
-            ]
-            button [
-                attr.style "margin:10px; padding:10px"
+                 div [
+                     attr.style "
+                         display: grid;
+                         grid-template-columns: repeat(3, 1fr);
+                         gap: 20px;
+                         margin-bottom: 30px;
+                     "
+                 ] [
+                     for snack in snacks do
+                         snackCard snack
+                 ]
+                 div [
+                      attr.style "
+                          background: white;
+                          border-radius: 12px;
+                          padding: 20px;
+                          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                          display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                      "
+                 ] [
+                      div [ attr.style "font-size: 16px;" ] [
+                          div [] [
+                              text "🅿️ Parking spot: "
+                              text currentSpot
+                          ]
+                          div [] [
+                              text "🅿️ Parking price: "
+                              text (string spotPrice + " Ft")
+                          ]
+                          div [] [
+                              text "🍿 Snacks: "
+                              textView (
+                                  cart.View.Map(fun cartMap ->
+                                      let snackTotal =
+                                          snacks
+                                          |> List.sumBy (fun (name, price, _) ->
+                                              match cartMap |> Map.tryFind name with
+                                              | Some qty -> qty * price
+                                              | None -> 0
+                                          )
+                                      string snackTotal + " Ft"
+                                  )
+                               )
+                          ]
+                        
+                          div [ attr.style "font-size: 20px; font-weight: bold; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px" ] [
+                              text "Total: "
+                              textView (totalPrice.Map(fun p -> string p + " Ft"))
+                          ]
+                      ]
 
-                on.click (fun _ _ ->
-                    let plate = inputPlate.Value
-                    let map = parkedSpots.Value
-
-                    match map |> Map.tryPick (fun _ r -> if r.Plate = plate then Some r else None) with
-                    | None -> JS.Alert("Plate not found")
-                    | Some record ->
-                        async {
-                            do! Remoting.LeaveCar record.Spot
-                            let cur = parkedSpots.Value
-                            parkedSpots.Value <- cur.Remove record.Spot
-                            JS.Alert("Payment successful!")
-                            JS.Window.Location.Href <- "/"
-                        }
-                        |> Async.StartImmediate
-                )
-            ] [
-                text "Pay"
-            ]
-
-            
-
-            button [
-                attr.style "margin:10px; padding:10px"
-
-                on.click ( fun _ _ ->
-                    JS.Window.Location.Href <- "/"
-                )
-            ] [
-                text "Back"
+                      button [
+                          attr.style "
+                              padding: 12px 30px;
+                              background: #333;
+                              color: white;
+                              border: none;
+                              border-radius: 8px;
+                              font-size: 16px;
+                              cursor: pointer;
+                          "
+                          on.click (fun _ _ ->
+                              let spot = selectedSpot.Value
+                              let parking =
+                                  if spot = "is not selected" then 0
+                                  else getPrice spot
+                              let snackTotal =
+                                  snacks
+                                  |> List.sumBy (fun (name, price, _) ->
+                                      match cart.Value.TryFind name with
+                                      | Some qty -> qty * price
+                                      | None -> 0
+                                  )
+                              let total = parking + snackTotal
+                              if total = 0 then
+                                  JS.Alert("You have not selected anything!")
+                              else
+                                  JS.Alert($"Order placed! Total: {total} Ft")
+                                  cart.Value <- Map.empty
+                          )
+                      ] [ text "Place Order" ]
+                 ]
             ]
         ]
-    
+
+
+

@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <WebSharperUseBooster>false</WebSharperUseBooster> 
+    <WebSharperErrorsAsWarnings>true</WebSharperErrorsAsWarnings>
   </PropertyGroup>
 
   <ItemGroup>
