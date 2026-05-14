@@ -27,6 +27,9 @@ module Remoting =
             Plate = p.Plate
             StartTime = p.StartTime.ToString("o")
         }
+    let getFileName (day: string) (time: string) =
+        let safeTime = time.Replace(":", "-")
+        $"parking_{day}_{safeTime}.json"
     [<Rpc>]
     let ParkCar (spot: string) (plate: string) : Async<unit> =
         async {

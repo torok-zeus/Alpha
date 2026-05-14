@@ -3,6 +3,7 @@ import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpM
 import { FSharpList_T } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpList`1"
 import ParkingRecordDto from "./Alpha.ParkingRecordDto"
 import Var from "../WebSharper.UI/WebSharper.UI.Var`1"
+export function ScheduleMain():Doc
 export function PaymentMain():Doc
 export function Main():Doc
 export function spotButton(spot:string):Doc

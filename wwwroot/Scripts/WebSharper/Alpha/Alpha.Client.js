@@ -1,13 +1,13 @@
 import Var from "../WebSharper.UI/WebSharper.UI.Var.js"
-import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpMap`2.js"
-import { get } from "../WebSharper.StdLib/Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.js"
-import { SplitChars } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
 import { ofArray, ofSeq, map } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ListModule.js"
-import { Map } from "../WebSharper.UI/WebSharper.UI.View.js"
-import { sumBy, delay, map as map_1 } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
 import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
 import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
 import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
+import { delay, map as map_1, sumBy } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
+import { Map2, Map } from "../WebSharper.UI/WebSharper.UI.View.js"
+import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpMap`2.js"
+import { get } from "../WebSharper.StdLib/Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.js"
+import { SplitChars } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
 import { StartImmediate, Delay, Bind, Zero } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import { LoadParking, ParkCar } from "./Alpha.Remoting.js"
 import { OfArray } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.MapModule.js"
@@ -15,6 +15,23 @@ import { ofSeq as ofSeq_1 } from "../WebSharper.StdLib/Microsoft.FSharp.Collecti
 import { New } from "./Alpha.ParkingRecordDto.js"
 import { DateFormatter } from "../WebSharper.StdLib/WebSharper.JavaScript.Pervasives.DateTime.js"
 import $StartupCode_Client from "./$StartupCode_Client.js"
+export function ScheduleMain(){
+  const selectedDay=Var.Create_1("");
+  const selectedTime=Var.Create_1("");
+  const days=ofArray([["Monday", "Hétf\u0151", "\ud83c\udfac"], ["Tuesday", "Kedd", "\ud83c\udfac"], ["Wednesday", "Szerda", "\ud83c\udfac"], ["Thursday", "Csütörtök", "\ud83c\udfac"], ["Friday", "Péntek", "\ud83c\udfac"], ["Saturday", "Szombat", "\ud83c\udfac"], ["Sunday", "Vasárnap", "\ud83c\udfac"]]);
+  const showTimes=ofArray(["10:00", "13:00", "16:00", "19:00", "22:00"]);
+  const dayButton=(dayEn, dayHu, emoji) => Doc.BindView((selected) => Doc.Element("button", [Attr.Create("style", selected==dayEn?"margin: 8px; padding: 15px 25px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold;":"margin: 8px; padding: 15px 25px; background: #333; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer;"), Handler("click", () =>() => {
+    selectedDay.Set(dayEn);
+    return selectedTime.Set("");
+  })], [Doc.TextNode(emoji+" "+dayHu)]), selectedDay.View);
+  return Doc.Element("div", [Attr.Create("style", "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;")], [MenuBar(), Doc.Element("div", [Attr.Create("style", "max-width: 800px; margin: 0 auto; padding: 30px;")], [Doc.Element("h2", [Attr.Create("style", "text-align: center; margin-bottom: 30px;")], [Doc.TextNode("\ud83c\udfac Select a Day")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 40px;")], ofSeq(delay(() => map_1((day) => dayButton.apply(null, day), days)))), Doc.BindView((day) => day==""?Doc.Element("div", [Attr.Create("style", "text-align: center; color: #aaa; font-size: 16px;")], [Doc.TextNode("\ud83d\udc46 Select a day to see show times")]):Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("style", "text-align: center; margin-bottom: 20px;")], [Doc.TextNode("Show times for: "+day)]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;")], ofSeq(delay(() => map_1((time) => Doc.BindView((selected) => Doc.Element("button", [Attr.Create("style", selected==time?"margin: 8px; padding: 12px 20px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold;":"margin: 8px; padding: 12px 20px; background: #555; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;"), Handler("click", () =>() => selectedTime.Set(time))], [Doc.TextNode("\ud83d\udd50 "+time)]), selectedTime.View), showTimes))))]), selectedDay.View), Doc.BindView((t) => {
+    const day=t[0];
+    const time=t[1];
+    return day==""||time==""?Doc.Element("div", [], []):Doc.Element("div", [Attr.Create("style", "text-align: center; margin-top: 20px;")], [Doc.Element("div", [Attr.Create("style", "margin-bottom: 15px; font-size: 18px; font-weight: bold;")], [Doc.TextNode("\u2705 "+day+" at "+time)]), Doc.Element("button", [Attr.Create("style", "padding: 14px 40px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; font-weight: bold;"), Handler("click", () =>() => {
+      globalThis.location.href="/?day="+day+"&time="+time;
+    })], [Doc.TextNode("\ud83c\udd7f\ufe0f Choose Parking Spot")])]);
+  }, Map2((_1, _2) =>[_1, _2], selectedDay.View, selectedTime.View))])]);
+}
 export function PaymentMain(){
   const cart=Var.Create_1(new FSharpMap("New", []));
   const url=globalThis.location.search;

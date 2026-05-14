@@ -16,13 +16,8 @@ module Client =
         ] [
             a [
                 attr.style "color:white; cursor:pointer"
-                on.click (fun _ _ -> JS.Window.Location.Href <- "/")
-            ] [text "Parking Spaces"]
-
-            a [
-                attr.style "color:white; cursor:pointer"
-                on.click (fun _ _ -> JS.Window.Location.Href <- "/payment")
-            ] [ text "Payment"]
+                on.click (fun _ _ -> JS.Window.Location.Href <- "/schedule")
+            ] [ text "Schedule" ]
         ]
     let selectedSpot=Var.Create("is not selected")
     let plateNumber = Var.Create ""
@@ -373,6 +368,100 @@ module Client =
                  ]
             ]
         ]
+    let ScheduleMain () =
+        let selectedDay = Var.Create ""
+        let selectedTime = Var.Create ""
+        let days = [
+            ("Monday", "Hétfő", "🎬")
+            ("Tuesday", "Kedd", "🎬")
+            ("Wednesday", "Szerda", "🎬")
+            ("Thursday", "Csütörtök", "🎬")
+            ("Friday", "Péntek", "🎬")
+            ("Saturday", "Szombat", "🎬")
+            ("Sunday", "Vasárnap", "🎬")
+        ]
+        let showTimes = [
+            "10:00"
+            "13:00"
+            "16:00"
+            "19:00"
+            "22:00"
+        ]
+        let dayButton (dayEn, dayHu, emoji) =
+            Doc.BindView (fun selected ->
+                button [
+                    attr.style (
+                        if selected = dayEn then
+                            "margin: 8px; padding: 15px 25px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold;"
+                        else
+                            "margin: 8px; padding: 15px 25px; background: #333; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer;"
+                    )
+                    on.click (fun _ _ ->
+                        selectedDay.Value <- dayEn
+                        selectedTime.Value <- ""
+                    )
+                ] [ text (emoji + " " + dayHu) ]
+            ) selectedDay.View
+        let timeButton time =
+            Doc.BindView (fun selected ->
+                button [
+                    attr.style (
+                        if selected = time then
+                            "margin: 8px; padding: 12px 20px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold;"
+                        else
+                            "margin: 8px; padding: 12px 20px; background: #555; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;"
+                    )
+                    on.click (fun _ _ ->
+                        selectedTime.Value <- time
+                    )
+                ] [ text ("🕐 " + time) ]
+            ) selectedTime.View
+
+        div [ attr.style "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;" ] [
+            MenuBar
+            div [ attr.style "max-width: 800px; margin: 0 auto; padding: 30px;" ] [
+                h2 [ attr.style "text-align: center; margin-bottom: 30px;" ] [
+                    text "🎬 Select a Day"
+                ]
+                div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 40px;" ] [
+                    for day in days do
+                        dayButton day
+                ]
+                Doc.BindView (fun day ->
+                    if day = "" then
+                        div [ attr.style "text-align: center; color: #aaa; font-size: 16px;" ] [
+                             text "👆 Select a day to see show times"
+                        ]
+                    else
+                        div [] [
+                            h3 [ attr.style "text-align: center; margin-bottom: 20px;" ] [
+                               text ("Show times for: " + day)
+                            ]
+                            div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;" ] [
+                                for time in showTimes do
+                                    timeButton time
+                            ]
+                        ]
+                ) selectedDay.View
+                Doc.BindView (fun (day, time) ->
+                    if day = "" || time = "" then
+                        div [] []
+                    else
+                        div [ attr.style "text-align: center; margin-top: 20px;" ] [
+                            div [ attr.style "margin-bottom: 15px; font-size: 18px; font-weight: bold;" ] [
+                                text ("✅ " + day + " at " + time)
+                            ]
+                            button [
+                                attr.style "padding: 14px 40px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; font-weight: bold;"
+                                on.click (fun _ _ ->
+                                    JS.Window.Location.Href <- "/?day=" + day + "&time=" + time
+                                )
+                            ] [ text "🅿️ Choose Parking Spot" ]
+                        ]
+                ) (View.Map2 (fun d t -> d, t) selectedDay.View selectedTime.View)
+            ]
+        ]
+            
 
 
 
