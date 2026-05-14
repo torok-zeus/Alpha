@@ -82,15 +82,27 @@ module Client =
         ]
 
     let Main () =
-
-        async{
-            let! data = Remoting.LoadParking()
-
+        let urlParams = JS.Window.Location.Search
+        let currentDay =
+            if urlParams.Contains("day=") then
+                urlParams.Split('&')
+                |> Array.tryFind (fun p -> p.Contains("day="))
+                |> Option.map (fun p -> p.Split('=').[1])
+                |> Option.defaultValue ""
+            else ""
+        let currentTime =
+            if urlParams.Contains("time=") then
+                urlParams.Split('&')
+                |> Array.tryFind (fun p -> p.Contains("time="))
+                |> Option.map (fun p -> p.Split('=').[1])
+                |> Option.defaultValue ""
+            else ""
+        async {
+            let! data = Remoting.LoadParking currentDay currentTime
             let map =
                 data
                 |> List.map (fun r -> r.Spot, r)
                 |> Map.ofList
-
             parkedSpots.Value <- map
         }
         |> Async.StartImmediate
@@ -160,7 +172,7 @@ module Client =
                                 JS.Alert("This parking space is already occupied!")
                             else
                                 async {
-                                    do! Remoting.ParkCar spot plate
+                                    do! Remoting.ParkCar spot plate currentDay currentTime
 
                                     let newRecord =
                                         {

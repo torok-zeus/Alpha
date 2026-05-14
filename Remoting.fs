@@ -19,21 +19,21 @@ type ParkingRecordDto =
     }
 [<JavaScript>]
 module Remoting =
-    let file = "parking.json"
-
     let toDto (p: ParkingRecord) : ParkingRecordDto =
         {
             Spot = p.Spot
             Plate = p.Plate
             StartTime = p.StartTime.ToString("o")
         }
+
     let getFileName (day: string) (time: string) =
         let safeTime = time.Replace(":", "-")
         $"parking_{day}_{safeTime}.json"
+
     [<Rpc>]
-    let ParkCar (spot: string) (plate: string) : Async<unit> =
+    let ParkCar (spot: string) (plate: string) (day: string) (time: string) : Async<unit> =
         async {
-            
+           let file = getFileName day time
            let records : ParkingRecord list=
                if File.Exists(file) then
                    File.ReadAllLines(file)
@@ -56,8 +56,9 @@ module Remoting =
         }
 
     [<Rpc>]
-    let LoadParking () : Async<ParkingRecordDto list> =
+    let LoadParking (day: string) (time: string) : Async<ParkingRecordDto list> =
         async {
+            let file = getFileName day time
             if File.Exists(file) then
                 let lines = File.ReadAllLines(file)
 
@@ -70,8 +71,9 @@ module Remoting =
                 return ([] : ParkingRecordDto list)
         }
     [<Rpc>]
-    let LeaveCar (spot: string) : Async<unit> =
+    let LeaveCar (spot: string) (day: string) (time: string) : Async<unit> =
         async{
+            let file = getFileName day time
             if File.Exists(file) then
                 let lines = File.ReadAllLines(file)
                 let records : ParkingRecord list =
