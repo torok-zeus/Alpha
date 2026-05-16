@@ -7,8 +7,8 @@ open WebSharper.UI.Server
 open WebSharper.UI.Html
 
 type EndPoint =
-    | [<EndPoint "/">] Home
-    | [<EndPoint "/schedule">] Schedule
+    | [<EndPoint "/">] Schedule
+    | [<EndPoint "/parking">] Home
     | [<EndPoint "/payment">] Payment
 
 module Site =
@@ -35,7 +35,7 @@ module Site =
         Sitelet.Sum [
            Sitelet.Infer <| fun ctx endpoint ->
                match endpoint with
-               | Home -> HomePage ctx
                | Schedule -> SchedulePage ctx
+               | Home -> HomePage ctx
                | Payment -> PaymentPage ctx
         ]

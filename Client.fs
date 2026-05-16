@@ -97,8 +97,15 @@ module Client =
                 |> Option.map (fun p -> p.Split('=').[1])
                 |> Option.defaultValue ""
             else ""
+        let currentDate =
+            if urlParams.Contains("date=") then
+                urlParams.Split('&')
+                |> Array.tryFind (fun p -> p.Contains("date="))
+                |> Option.map (fun p -> p.Split('=').[1])
+                |> Option.defaultValue ""
+            else ""
         async {
-            let! data = Remoting.LoadParking currentDay currentTime
+            let! data = Remoting.LoadParking currentDay currentTime currentDate
             let map =
                 data
                 |> List.map (fun r -> r.Spot, r)
@@ -109,6 +116,14 @@ module Client =
 
         div [] [
             MenuBar
+            div [ attr.style "padding: 10px 20px;" ] [
+                button [
+                    attr.style "padding: 8px 20px; background: #555; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;"
+                    on.click (fun _ _ ->
+                        JS.Window.Location.Href <- "/"
+                    )
+                ] [ text "← Back to Schedule" ]
+            ]
             h1 [] [ text "Parking registry" ]
             div [
                 attr.style "
@@ -172,7 +187,7 @@ module Client =
                                 JS.Alert("This parking space is already occupied!")
                             else
                                 async {
-                                    do! Remoting.ParkCar spot plate currentDay currentTime
+                                    do! Remoting.ParkCar spot plate currentDay currentTime currentDate
 
                                     let newRecord =
                                         {
@@ -185,7 +200,7 @@ module Client =
                                     plateNumber.Value <- ""
                                     selectedSpot.Value <- "is not selected"
 
-                                    JS.Window.Location.Href <- "/payment?spot=" + spot
+                                    JS.Window.Location.Href <- "/payment?spot=" + spot + "&day=" + currentDay + "&time=" + currentTime + "&date=" + currentDate
                                 }
                                 |> Async.StartImmediate
                         )
@@ -358,10 +373,6 @@ module Client =
                               cursor: pointer;
                           "
                           on.click (fun _ _ ->
-                              let spot = selectedSpot.Value
-                              let parking =
-                                  if spot = "is not selected" then 0
-                                  else getPrice spot
                               let snackTotal =
                                   snacks
                                   |> List.sumBy (fun (name, price, _) ->
@@ -369,7 +380,7 @@ module Client =
                                       | Some qty -> qty * price
                                       | None -> 0
                                   )
-                              let total = parking + snackTotal
+                              let total = spotPrice + snackTotal
                               if total = 0 then
                                   JS.Alert("You have not selected anything!")
                               else
@@ -381,17 +392,18 @@ module Client =
             ]
         ]
     let ScheduleMain () =
-        let selectedDay = Var.Create ""
-        let selectedTime = Var.Create ""
-        let days = [
-            ("Monday", "Hétfő", "🎬")
-            ("Tuesday", "Kedd", "🎬")
-            ("Wednesday", "Szerda", "🎬")
-            ("Thursday", "Csütörtök", "🎬")
-            ("Friday", "Péntek", "🎬")
-            ("Saturday", "Szombat", "🎬")
-            ("Sunday", "Vasárnap", "🎬")
-        ]
+        let selectedDate = Var.Create ""
+        let today = System.DateTime.Now
+        let maxDate = today.AddDays(14.0)
+        let availableDates =
+            [ 0 .. 13 ]
+            |> List.map (fun i -> today.AddDays(float i))
+        
+        async {
+            do! Remoting.CleanExpiredBookings()
+        }
+        |> Async.StartImmediate
+
         let showTimes = [
             "10:00"
             "13:00"
@@ -399,81 +411,92 @@ module Client =
             "19:00"
             "22:00"
         ]
-        let dayButton (dayEn, dayHu, emoji) =
+        let dateButton (date: System.DateTime) =
+            let dateStr = date.ToString("yyyy-MM-dd")
+            let dayName = date.DayOfWeek.ToString()
+            let dayHu =
+                match date.DayOfWeek with
+                | System.DayOfWeek.Monday -> "Hétfő"
+                | System.DayOfWeek.Tuesday -> "Kedd"
+                | System.DayOfWeek.Wednesday -> "Szerda"
+                | System.DayOfWeek.Thursday -> "Csütörtök"
+                | System.DayOfWeek.Friday -> "Péntek"
+                | System.DayOfWeek.Saturday -> "Szombat"
+                | System.DayOfWeek.Sunday -> "Vasárnap"
+                | _ -> dayName
+
             Doc.BindView (fun selected ->
                 button [
                     attr.style (
-                        if selected = dayEn then
-                            "margin: 8px; padding: 15px 25px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold;"
+                        if selected = dateStr then
+                            "margin: 5px; padding: 10px 15px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: bold; text-align: center;"
                         else
-                            "margin: 8px; padding: 15px 25px; background: #333; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer;"
+                            "margin: 5px; padding: 10px 15px; background: #333; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center;"
                     )
                     on.click (fun _ _ ->
-                        selectedDay.Value <- dayEn
-                        selectedTime.Value <- ""
+                        selectedDate.Value <- dateStr
                     )
-                ] [ text (emoji + " " + dayHu) ]
-            ) selectedDay.View
-        let timeButton time =
-            Doc.BindView (fun selected ->
-                button [
-                    attr.style (
-                        if selected = time then
-                            "margin: 8px; padding: 12px 20px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold;"
-                        else
-                            "margin: 8px; padding: 12px 20px; background: #555; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;"
-                    )
-                    on.click (fun _ _ ->
-                        selectedTime.Value <- time
-                    )
-                ] [ text ("🕐 " + time) ]
-            ) selectedTime.View
+                ] [
+                    div [] [ text dayHu ]
+                    div [ attr.style "font-size: 11px; opacity: 0.8;" ] [ text (date.ToString("MM. dd.")) ]
+                ]
+            ) selectedDate.View
+
+        let timeButton (time: string) (dateStr: string) =
+            let dt = System.DateTime.Parse(dateStr)
+            let dayName = dt.DayOfWeek.ToString()
+            button [
+                attr.style "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 140px;"
+                on.click (fun _ _ ->
+                    JS.Window.Location.Href <- "/parking?day=" + dayName + "&time=" + time + "&date=" + dateStr
+                )
+            ] [
+                div [] [ text ("🕐 " + time) ]
+                div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Click to book" ]
+            ]
 
         div [ attr.style "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;" ] [
             MenuBar
-            div [ attr.style "max-width: 800px; margin: 0 auto; padding: 30px;" ] [
-                h2 [ attr.style "text-align: center; margin-bottom: 30px;" ] [
-                    text "🎬 Select a Day"
+            div [ attr.style "max-width: 900px; margin: 0 auto; padding: 30px;" ] [
+                h2 [ attr.style "text-align: center; margin-bottom: 10px;" ] [
+                    text "🎬 Select a Date"
                 ]
-                div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 40px;" ] [
-                    for day in days do
-                        dayButton day
+                p [ attr.style "text-align: center; color: #888; margin-bottom: 20px;" ] [
+                    text "Available for the next 14 days"
                 ]
-                Doc.BindView (fun day ->
-                    if day = "" then
-                        div [ attr.style "text-align: center; color: #aaa; font-size: 16px;" ] [
-                             text "👆 Select a day to see show times"
+                div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;" ] [
+                    for date in availableDates do
+                        dateButton date
+                ]
+                Doc.BindView (fun dateStr ->
+                    if dateStr = "" then
+                        div [ attr.style "text-align: center; color: #aaa; font-size: 16px; padding: 40px;" ] [
+                            text "👆 Select a date to see show times"
                         ]
                     else
+                        let dt = System.DateTime.Parse(dateStr)
+                        let dayHu =
+                            match dt.DayOfWeek with
+                            | System.DayOfWeek.Monday -> "Hétfő"
+                            | System.DayOfWeek.Tuesday -> "Kedd"
+                            | System.DayOfWeek.Wednesday -> "Szerda"
+                            | System.DayOfWeek.Thursday -> "Csütörtök"
+                            | System.DayOfWeek.Friday -> "Péntek"
+                            | System.DayOfWeek.Saturday -> "Szombat"
+                            | System.DayOfWeek.Sunday -> "Vasárnap"
+                            | _ -> dt.DayOfWeek.ToString()
                         div [] [
                             h3 [ attr.style "text-align: center; margin-bottom: 20px;" ] [
-                               text ("Show times for: " + day)
+                                text ("📅 " + dayHu + " - " + dt.ToString("yyyy. MM. dd."))
                             ]
-                            div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;" ] [
+                            p [ attr.style "text-align: center; color: #888; margin-bottom: 20px;" ] [
+                                text "Click a show time to choose your parking spot"
+                            ]
+                            div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;" ] [
                                 for time in showTimes do
-                                    timeButton time
+                                    timeButton time dateStr
                             ]
                         ]
-                ) selectedDay.View
-                Doc.BindView (fun (day, time) ->
-                    if day = "" || time = "" then
-                        div [] []
-                    else
-                        div [ attr.style "text-align: center; margin-top: 20px;" ] [
-                            div [ attr.style "margin-bottom: 15px; font-size: 18px; font-weight: bold;" ] [
-                                text ("✅ " + day + " at " + time)
-                            ]
-                            button [
-                                attr.style "padding: 14px 40px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; font-weight: bold;"
-                                on.click (fun _ _ ->
-                                    JS.Window.Location.Href <- "/?day=" + day + "&time=" + time
-                                )
-                            ] [ text "🅿️ Choose Parking Spot" ]
-                        ]
-                ) (View.Map2 (fun d t -> d, t) selectedDay.View selectedTime.View)
+                ) selectedDate.View
             ]
         ]
-            
-
-
-

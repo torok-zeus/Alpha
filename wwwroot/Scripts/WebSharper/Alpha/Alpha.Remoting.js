@@ -1,21 +1,25 @@
+import { Replace } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
 import { New } from "./Alpha.ParkingRecordDto.js"
 import { DateFormatter } from "../WebSharper.StdLib/WebSharper.JavaScript.Pervasives.DateTime.js"
-import $StartupCode_Remoting from "./$StartupCode_Remoting.js"
 import AjaxRemotingProvider from "../WebSharper.StdLib/WebSharper.Remoting.AjaxRemotingProvider.js"
 import { Bind, Return } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import { DecodeList, Id } from "../WebSharper.Web/WebSharper.ClientSideJson.Provider.js"
+export function getFileName(day, time, date){
+  const safeTime=Replace(time, ":", "-");
+  return"parking_"+String(day)+"_"+String(Replace(Replace(date, "/", "-"), ".", "-"))+"_"+String(safeTime)+".json";
+}
 export function toDto(p){
   return New(p.Spot, p.Plate, DateFormatter(p.StartTime, "o"));
 }
-export function file(){
-  return $StartupCode_Remoting.file;
+export function CleanExpiredBookings(){
+  return(new AjaxRemotingProvider()).Async("Remoting/CleanExpiredBookings", []);
 }
-export function LeaveCar(spot){
-  return(new AjaxRemotingProvider()).Async("Remoting/LeaveCar", [spot]);
+export function LeaveCar(spot, day, time, date){
+  return(new AjaxRemotingProvider()).Async("Remoting/LeaveCar", [spot, day, time, date]);
 }
-export function LoadParking(){
-  return Bind((new AjaxRemotingProvider()).Async("Remoting/LoadParking", []), (o) => Return(((DecodeList(Id()))())(o)));
+export function LoadParking(day, time, date){
+  return Bind((new AjaxRemotingProvider()).Async("Remoting/LoadParking", [day, time, date]), (o) => Return(((DecodeList(Id()))())(o)));
 }
-export function ParkCar(spot, plate){
-  return(new AjaxRemotingProvider()).Async("Remoting/ParkCar", [spot, plate]);
+export function ParkCar(spot, plate, day, time, date){
+  return(new AjaxRemotingProvider()).Async("Remoting/ParkCar", [spot, plate, day, time, date]);
 }
