@@ -381,16 +381,56 @@ module Client =
                                       | None -> 0
                                   )
                               let total = spotPrice + snackTotal
+             
                               if total = 0 then
                                   JS.Alert("You have not selected anything!")
                               else
-                                  JS.Alert($"Order placed! Total: {total} Ft")
+                                  let doc = JS.Eval("new jspdf.jsPDF()") :?> obj
+                                  doc?setFontSize(22) |> ignore
+                                  doc?setTextColor(40, 40, 40) |> ignore
+                                  doc?text("🎬 Cinema Ticket & Invoice", 105, 20, JS.Eval("{align:'center'}")) |> ignore
+                                  doc?setDrawColor(200, 200, 200) |> ignore
+                                  doc?line(20, 28, 190, 28) |> ignore
+                                  doc?setFontSize(12) |> ignore
+                                  doc?setTextColor(80, 80, 80) |> ignore
+                                  doc?text("Date of purchase: " + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm"), 20, 38) |> ignore
+                                  doc?setFontSize(14) |> ignore
+                                  doc?setTextColor(40, 40, 40) |> ignore
+                                  doc?text("Parking Details", 20, 52) |> ignore
+                                  doc?setFontSize(11) |> ignore
+                                  doc?setTextColor(80, 80, 80) |> ignore
+                                  doc?text("Spot: " + currentSpot, 20, 62) |> ignore
+                                  doc?text("Parking price: " + string spotPrice + " Ft", 20, 70) |> ignore
+                                  doc?setFontSize(14) |> ignore
+                                  doc?setTextColor(40, 40, 40) |> ignore
+                                  doc?text("Snacks", 20, 85) |> ignore
+                                  doc?setFontSize(11) |> ignore
+                                  doc?setTextColor(80, 80, 80) |> ignore
+
+                                  let mutable yPos = 95
+                                  for (name, price, _) in snacks do
+                                      match cart.Value.TryFind name with
+                                      | Some qty when qty > 0 ->
+                                          doc?text(name + " x" + string qty + " = " + string (qty * price) + " Ft", 20, yPos) |> ignore
+                                          yPos <- yPos + 8
+                                      | _ -> ()
+
+                                  doc?setDrawColor(200, 200, 200) |> ignore
+                                  doc?line(20, yPos + 2, 190, yPos + 2) |> ignore
+                                  doc?setFontSize(16) |> ignore
+                                  doc?setTextColor(40, 40, 40) |> ignore
+                                  doc?text("TOTAL: " + string total + " Ft", 20, yPos + 12) |> ignore
+                                  doc?setFontSize(10) |> ignore
+                                  doc?setTextColor(150, 150, 150) |> ignore
+                                  doc?text("Thank you for your purchase!", 105, yPos + 30, JS.Eval("{align:'center'}")) |> ignore
+                                  doc?save("cinema-ticket.pdf") |> ignore
                                   cart.Value <- Map.empty
+                                  JS.Window.Location.Href <- "/"
                           )
                       ] [ text "Place Order" ]
                  ]
             ]
-        ]
+        ]    
     let ScheduleMain () =
         let selectedDate = Var.Create ""
         let today = System.DateTime.Now

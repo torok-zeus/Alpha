@@ -13,6 +13,8 @@ import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpM
 import { get } from "../WebSharper.StdLib/Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.js"
 import { SplitChars } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
 import { Map } from "../WebSharper.UI/WebSharper.UI.View.js"
+import { Get } from "../WebSharper.StdLib/WebSharper.Enumerator.js"
+import { isIDisposable } from "../WebSharper.StdLib/System.IDisposable.js"
 import { tryFind, ofSeq as ofSeq_1 } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ArrayModule.js"
 import { Some } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1.js"
 import { OfArray } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.MapModule.js"
@@ -77,11 +79,67 @@ export function PaymentMain(){
     const m=cartMap.TryFind(_1[0]);
     return m==null?0:m.$0*_1[1];
   }, snacks))+" Ft", cart.View))]), Doc.Element("div", [Attr.Create("style", "font-size: 20px; font-weight: bold; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px")], [Doc.TextNode("Total: "), Doc.TextView(Map((p) => String(p)+" Ft", totalPrice))])]), Doc.Element("button", [Attr.Create("style", "\r\n                              padding: 12px 30px;\r\n                              background: #333;\r\n                              color: white;\r\n                              border: none;\r\n                              border-radius: 8px;\r\n                              font-size: 16px;\r\n                              cursor: pointer;\r\n                          "), Handler("click", () =>() => {
-    const total=spotPrice+sumBy((_1) => {
-      const m=cart.Get().TryFind(_1[0]);
-      return m==null?0:m.$0*_1[1];
+    let yPos;
+    const snackTotal=sumBy((_2) => {
+      const m_1=cart.Get().TryFind(_2[0]);
+      return m_1==null?0:m_1.$0*_2[1];
     }, snacks);
-    return total===0?alert("You have not selected anything!"):(alert("Order placed! Total: "+String(total)+" Ft"),cart.Set(new FSharpMap("New", [])));
+    const total=spotPrice+snackTotal;
+    if(total===0)return alert("You have not selected anything!");
+    else {
+      const doc=eval("new jspdf.jsPDF()");
+      doc.setFontSize(22);
+      doc.setTextColor([40, 40, 40]);
+      doc.text(["\ud83c\udfac Cinema Ticket & Invoice", 105, 20, eval("{align:'center'}")]);
+      doc.setDrawColor([200, 200, 200]);
+      doc.line([20, 28, 190, 28]);
+      doc.setFontSize(12);
+      doc.setTextColor([80, 80, 80]);
+      doc.text(["Date of purchase: "+DateFormatter(Date.now(), "yyyy-MM-dd HH:mm"), 20, 38]);
+      doc.setFontSize(14);
+      doc.setTextColor([40, 40, 40]);
+      doc.text(["Parking Details", 20, 52]);
+      doc.setFontSize(11);
+      doc.setTextColor([80, 80, 80]);
+      doc.text(["Spot: "+currentSpot, 20, 62]);
+      doc.text(["Parking price: "+String(spotPrice)+" Ft", 20, 70]);
+      doc.setFontSize(14);
+      doc.setTextColor([40, 40, 40]);
+      doc.text(["Snacks", 20, 85]);
+      doc.setFontSize(11);
+      doc.setTextColor([80, 80, 80]);
+      yPos=95;
+      const e=Get(snacks);
+      try {
+        while(e.MoveNext())
+          {
+            const f=e.Current;
+            const name=f[0];
+            const m=cart.Get().TryFind(name);
+            if(m!=null&&m.$==1)if(m.$0>0){
+              const qty=m.$0;
+              doc.text([name+" x"+String(qty)+" = "+String(qty*f[1])+" Ft", 20, yPos]);
+              yPos=yPos+8;
+            }
+          }
+      }
+      finally {
+        const _1=e;
+        if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+      }
+      doc.setDrawColor([200, 200, 200]);
+      doc.line([20, yPos+2, 190, yPos+2]);
+      doc.setFontSize(16);
+      doc.setTextColor([40, 40, 40]);
+      doc.text(["TOTAL: "+String(total)+" Ft", 20, yPos+12]);
+      doc.setFontSize(10);
+      doc.setTextColor([150, 150, 150]);
+      doc.text(["Thank you for your purchase!", 105, yPos+30, eval("{align:'center'}")]);
+      doc.save("cinema-ticket.pdf");
+      cart.Set(new FSharpMap("New", []));
+      globalThis.location.href="/";
+      return;
+    }
   })], [Doc.TextNode("Place Order")])])])]);
 }
 export function Main(){
