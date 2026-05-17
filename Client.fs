@@ -381,49 +381,77 @@ module Client =
                                       | None -> 0
                                   )
                               let total = spotPrice + snackTotal
-             
+
                               if total = 0 then
                                   JS.Alert("You have not selected anything!")
                               else
-                                  let doc = JS.Eval("new jspdf.jsPDF()") :?> obj
-                                  doc?setFontSize(22) |> ignore
-                                  doc?setTextColor(40, 40, 40) |> ignore
-                                  doc?text("🎬 Cinema Ticket & Invoice", 105, 20, JS.Eval("{align:'center'}")) |> ignore
-                                  doc?setDrawColor(200, 200, 200) |> ignore
-                                  doc?line(20, 28, 190, 28) |> ignore
-                                  doc?setFontSize(12) |> ignore
-                                  doc?setTextColor(80, 80, 80) |> ignore
-                                  doc?text("Date of purchase: " + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm"), 20, 38) |> ignore
-                                  doc?setFontSize(14) |> ignore
-                                  doc?setTextColor(40, 40, 40) |> ignore
-                                  doc?text("Parking Details", 20, 52) |> ignore
-                                  doc?setFontSize(11) |> ignore
-                                  doc?setTextColor(80, 80, 80) |> ignore
-                                  doc?text("Spot: " + currentSpot, 20, 62) |> ignore
-                                  doc?text("Parking price: " + string spotPrice + " Ft", 20, 70) |> ignore
-                                  doc?setFontSize(14) |> ignore
-                                  doc?setTextColor(40, 40, 40) |> ignore
-                                  doc?text("Snacks", 20, 85) |> ignore
-                                  doc?setFontSize(11) |> ignore
-                                  doc?setTextColor(80, 80, 80) |> ignore
-
-                                  let mutable yPos = 95
-                                  for (name, price, _) in snacks do
-                                      match cart.Value.TryFind name with
-                                      | Some qty when qty > 0 ->
-                                          doc?text(name + " x" + string qty + " = " + string (qty * price) + " Ft", 20, yPos) |> ignore
-                                          yPos <- yPos + 8
-                                      | _ -> ()
-
-                                  doc?setDrawColor(200, 200, 200) |> ignore
-                                  doc?line(20, yPos + 2, 190, yPos + 2) |> ignore
-                                  doc?setFontSize(16) |> ignore
-                                  doc?setTextColor(40, 40, 40) |> ignore
-                                  doc?text("TOTAL: " + string total + " Ft", 20, yPos + 12) |> ignore
-                                  doc?setFontSize(10) |> ignore
-                                  doc?setTextColor(150, 150, 150) |> ignore
-                                  doc?text("Thank you for your purchase!", 105, yPos + 30, JS.Eval("{align:'center'}")) |> ignore
-                                  doc?save("cinema-ticket.pdf") |> ignore
+                                  let url = JS.Window.Location.Search
+                                  let currentDay =
+                                      url.Split('&')
+                                      |> Array.tryFind (fun p -> p.Contains("day="))
+                                      |> Option.map (fun p -> p.Split('=').[1])
+                                      |> Option.defaultValue ""
+                                  let currentTime =
+                                      url.Split('&')
+                                      |> Array.tryFind (fun p -> p.Contains("time="))
+                                      |> Option.map (fun p -> p.Split('=').[1])
+                                      |> Option.defaultValue ""
+                                  let currentDate =
+                                      url.Split('&')
+                                      |> Array.tryFind (fun p -> p.Contains("date="))
+                                      |> Option.map (fun p -> p.Split('=').[1])
+                                      |> Option.defaultValue ""
+                                  let snackLines =
+                                      snacks
+                                      |> List.choose (fun (name, price, _) ->
+                                          match cart.Value.TryFind name with
+                                          | Some qty when qty > 0 ->
+                                              Some (name + " x" + string qty + " = " + string (qty * price) + " Ft")
+                                          | _ -> None
+                                      )
+                                      |> String.concat "\\n"
+                                  let script =
+                                      """
+                                      (function() {
+                                          var doc = new jspdf.jsPDF();
+                                          doc.setFontSize(22);
+                                          doc.setTextColor(40, 40, 40);
+                                          doc.text('Cinema Ticket & Invoice', 105, 20, {align: 'center'});
+                                          doc.setDrawColor(200, 200, 200);
+                                          doc.line(20, 28, 190, 28);
+                                          doc.setFontSize(12);
+                                          doc.setTextColor(80, 80, 80);
+                                          doc.text('Date of purchase: """ + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm") + """', 20, 38);
+                                          doc.text('Show: """ + currentDate + " " + currentDay + " " + currentTime + """', 20, 46);
+                                          doc.setFontSize(14);
+                                          doc.setTextColor(40, 40, 40);
+                                          doc.text('Parking', 20, 58);
+                                          doc.setFontSize(11);
+                                          doc.setTextColor(80, 80, 80);
+                                          doc.text('Spot: """ + currentSpot + """', 20, 68);
+                                          doc.text('Parking price: """ + string spotPrice + """ Ft', 20, 76);
+                                          doc.setFontSize(14);
+                                          doc.setTextColor(40, 40, 40);
+                                          doc.text('Snacks', 20, 90);
+                                          doc.setFontSize(11);
+                                          doc.setTextColor(80, 80, 80);
+                                          var lines = '""" + snackLines + """'.split('\\n');
+                                          var y = 100;
+                                          for (var i = 0; i < lines.length; i++) {
+                                              if (lines[i]) { doc.text(lines[i], 20, y); y += 9; }
+                                          }
+                                          doc.setDrawColor(200, 200, 200);
+                                          doc.line(20, y + 2, 190, y + 2);
+                                          doc.setFontSize(16);
+                                          doc.setTextColor(40, 40, 40);
+                                          doc.text('TOTAL: """ + string total + """ Ft', 20, y + 14);
+                                          doc.setFontSize(10);
+                                          doc.setTextColor(150, 150, 150);
+                                          doc.text('Thank you for your visit!', 105, y + 30, {align: 'center'});
+                                          doc.save('cinema-ticket.pdf');
+                                      })();
+                                      """
+                                  JS.Eval(script) |> ignore
                                   cart.Value <- Map.empty
                                   JS.Window.Location.Href <- "/"
                           )
