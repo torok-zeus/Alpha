@@ -125,43 +125,7 @@ module Client =
                 ] [ text "← Back to Schedule" ]
                 h1 [ attr.style "margin: 0;" ] [ text "Parking registry" ]
             ]
-            div [
-                attr.style "
-                    width: 80%;
-                    margin: 30px auto 20px auto;
-                    height: 40px;
-                    background: black;
-                    border-radius: 4px;
-                    text-align: center;
-                    color: white;
-                    font-size: 18px;
-                    font-weight: bold;
-                    line-height: 40px;
-                    letter-spacing: 6px;
-                    border: 2px solid #ccc;
-                 "
-            ] [ text "SCREEN" ]
-            div [
-                 attr.style "
-                     display:grid;
-                     grid-template-columns:repeat(10, 80px);
-                     gap:10px;
-                     justify-content:center;
-                     margin-top:30px;
-                 "
-            ] [
-                for s in parkingSpots do
-                    spotButton s
-            ]
-            h3 [] [
-                textView (
-                    selectedSpot.View.Map(fun s ->
-                        "The parking space of your choice: " + s
-                    )
-                )
-            ]
             div [] [
-                text "Plate: "
                 Doc.Input[
                     attr.placeholder "Text here your car plate"
                     attr.style "margin:5px; padding:5px"
@@ -206,6 +170,42 @@ module Client =
                         )
                     ] [ text "🍿 Snacks" ]
             ) plateNumber.View
+            div [
+                attr.style "
+                    width: 80%;
+                    margin: 30px auto 20px auto;
+                    height: 40px;
+                    background: black;
+                    border-radius: 4px;
+                    text-align: center;
+                    color: white;
+                    font-size: 18px;
+                    font-weight: bold;
+                    line-height: 40px;
+                    letter-spacing: 6px;
+                    border: 2px solid #ccc;
+                 "
+            ] [ text "SCREEN" ]
+            div [
+                 attr.style "
+                     display:grid;
+                     grid-template-columns:repeat(10, 80px);
+                     gap:10px;
+                     justify-content:center;
+                     margin-top:30px;
+                 "
+            ] [
+                for s in parkingSpots do
+                    spotButton s
+            ]
+            h3 [] [
+                textView (
+                    selectedSpot.View.Map(fun s ->
+                        "The parking space of your choice: " + s
+                    )
+                )
+            ]
+            
         ]
 
     let PaymentMain () =
