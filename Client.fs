@@ -116,15 +116,15 @@ module Client =
 
         div [] [
             MenuBar
-            div [ attr.style "padding: 10px 20px;" ] [
+            div [ attr.style "display: flex; align-items: center; justify-content: center; padding: 10px 20px; position: relative;" ] [
                 button [
-                    attr.style "padding: 8px 20px; background: #555; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;"
+                    attr.style "padding: 8px 20px; background: #555; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; position: absolute; left: 20px;"
                     on.click (fun _ _ ->
                         JS.Window.Location.Href <- "/"
                     )
                 ] [ text "← Back to Schedule" ]
+                h1 [ attr.style "margin: 0;" ] [ text "Parking registry" ]
             ]
-            h1 [] [ text "Parking registry" ]
             div [
                 attr.style "
                     width: 80%;
@@ -219,15 +219,12 @@ module Client =
                 "is not selected"
         let spotPrice = getPrice currentSpot
         let snacks = [
-        // Food
             ("Popcorn", 1200, "🍿")
             ("Nachos", 1500, "🧀")
             ("Hot Dog", 1800, "🌭")
-        // Drinks
             ("Cola", 800, "🥤")
             ("Water", 500, "💧")
             ("Beer", 1000, "🍺")
-        // Sweets
             ("Chocolate", 700, "🍫")
             ("Gummy Bears", 600, "🍬")
             ("Chips", 900, "🥨")
@@ -407,26 +404,25 @@ module Client =
         |> Async.StartImmediate
 
         let showTimes = [
-            "10:00", "Gyerekfilm", "🧸"
-            "13:00", "Vígjáték",   "😂"
-            "16:00", "Romantikus", "💕"
-            "19:00", "Akciófilm",  "💥"
-            "22:00", "Horror",     "👻"
+           "10:00", "Children's Film", "🧸"
+           "13:00", "Comedy",          "😂"
+           "16:00", "Romance",         "💕"
+           "19:00", "Action",          "💥"
+           "22:00", "Horror",          "👻"
         ]
         let dateButton (date: System.DateTime) =
             let dateStr = date.ToString("yyyy-MM-dd")
-            let dayName = date.DayOfWeek.ToString()
-            let dayHu =
-                match date.DayOfWeek with
-                | System.DayOfWeek.Monday -> "Hétfő"
-                | System.DayOfWeek.Tuesday -> "Kedd"
-                | System.DayOfWeek.Wednesday -> "Szerda"
-                | System.DayOfWeek.Thursday -> "Csütörtök"
-                | System.DayOfWeek.Friday -> "Péntek"
-                | System.DayOfWeek.Saturday -> "Szombat"
-                | System.DayOfWeek.Sunday -> "Vasárnap"
-                | _ -> dayName
-
+            let dt = System.DateTime.Parse(dateStr)
+            let dayName =
+                match dt.DayOfWeek with
+                | System.DayOfWeek.Monday -> "Monday"
+                | System.DayOfWeek.Tuesday -> "Tuesday"
+                | System.DayOfWeek.Wednesday -> "Wednesday"
+                | System.DayOfWeek.Thursday -> "Thursday"
+                | System.DayOfWeek.Friday -> "Friday"
+                | System.DayOfWeek.Saturday -> "Saturday"
+                | System.DayOfWeek.Sunday -> "Sunday"
+                | _ -> ""
             Doc.BindView (fun selected ->
                 button [
                     attr.style (
@@ -439,24 +435,46 @@ module Client =
                         selectedDate.Value <- dateStr
                     )
                 ] [
-                    div [] [ text dayHu ]
+                    div [] [ text dayName ]
                     div [ attr.style "font-size: 11px; opacity: 0.8;" ] [ text (date.ToString("MM. dd.")) ]
                 ]
             ) selectedDate.View
 
         let timeButton (time: string) (genre: string) (emoji: string) (dateStr: string) =
             let dt = System.DateTime.Parse(dateStr)
-            let dayName = dt.DayOfWeek.ToString()
-            button [
-                attr.style "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"
-                on.click (fun _ _ ->
-                    JS.Window.Location.Href <- "/parking?day=" + dayName + "&time=" + time + "&date=" + dateStr
-                )
-            ] [
-                div [] [ text ("🕐 " + time) ]
-                div [ attr.style "font-size: 14px; margin-top: 4px;" ] [ text (emoji + " " + genre) ]
-                div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Kattints a foglaláshoz" ]
-            ]
+            let dayName =
+                match dt.DayOfWeek with
+                | System.DayOfWeek.Monday -> "Monday"
+                | System.DayOfWeek.Tuesday -> "Tuesday"
+                | System.DayOfWeek.Wednesday -> "Wednesday"
+                | System.DayOfWeek.Thursday -> "Thursday"
+                | System.DayOfWeek.Friday -> "Friday"
+                | System.DayOfWeek.Saturday -> "Saturday"
+                | System.DayOfWeek.Sunday -> "Sunday"
+                | _ -> ""
+            let now = System.DateTime.Now
+            let showDateTime = System.DateTime.Parse(dateStr + " " + time)
+            let isPast = showDateTime < now
+            if isPast then
+                button [
+                    attr.style "margin: 8px; padding: 20px 30px; background: #aaa; color: #eee; border: none; border-radius: 10px; font-size: 16px; cursor: not-allowed; font-weight: bold; width: 160px; opacity: 0.6;"
+                    attr.disabled "disabled"
+                ] [
+                    div [] [ text ("🕐 " + time) ]
+                    div [ attr.style "font-size: 14px; margin-top: 4px;" ] [ text (emoji + " " + genre) ]
+                    div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Already started" ]
+                ]
+            else
+                button [
+                    attr.style "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"
+                    on.click (fun _ _ ->
+                        JS.Window.Location.Href <- "/parking?day=" + dayName + "&time=" + time + "&date=" + dateStr
+                    )
+                ] [
+                    div [] [ text ("🕐 " + time) ]
+                    div [ attr.style "font-size: 14px; margin-top: 4px;" ] [ text (emoji + " " + genre) ]
+                    div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Click to book" ]
+                ]
 
         div [ attr.style "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;" ] [
             MenuBar
@@ -478,19 +496,10 @@ module Client =
                         ]
                     else
                         let dt = System.DateTime.Parse(dateStr)
-                        let dayHu =
-                            match dt.DayOfWeek with
-                            | System.DayOfWeek.Monday -> "Hétfő"
-                            | System.DayOfWeek.Tuesday -> "Kedd"
-                            | System.DayOfWeek.Wednesday -> "Szerda"
-                            | System.DayOfWeek.Thursday -> "Csütörtök"
-                            | System.DayOfWeek.Friday -> "Péntek"
-                            | System.DayOfWeek.Saturday -> "Szombat"
-                            | System.DayOfWeek.Sunday -> "Vasárnap"
-                            | _ -> dt.DayOfWeek.ToString()
+                        let dayName = dt.DayOfWeek.ToString()
                         div [] [
                             h3 [ attr.style "text-align: center; margin-bottom: 20px;" ] [
-                                text ("📅 " + dayHu + " - " + dt.ToString("yyyy. MM. dd."))
+                                text ("📅 " + dayName + " - " + dt.ToString("yyyy. MM. dd."))
                             ]
                             p [ attr.style "text-align: center; color: #888; margin-bottom: 20px;" ] [
                                 text "Click a show time to choose your parking spot"

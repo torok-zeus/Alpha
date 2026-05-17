@@ -7,8 +7,8 @@ import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
 import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
 import { delay, map as map_1, collect, sumBy } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
 import { DateFormatter } from "../WebSharper.StdLib/WebSharper.JavaScript.Pervasives.DateTime.js"
-import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
 import { Parse } from "../WebSharper.StdLib/WebSharper.DateTimeHelpers.js"
+import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
 import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpMap`2.js"
 import { get } from "../WebSharper.StdLib/Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.js"
 import { SplitChars } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
@@ -23,28 +23,28 @@ export function ScheduleMain(){
   const today=Date.now();
   const availableDates=map((i) => today+i*864E5, ofSeq(range(0, 13)));
   StartImmediate(Delay(() => Bind(CleanExpiredBookings(), () => Return(null))), null);
-  const showTimes=ofArray([["10:00", "Gyerekfilm", "\ud83e\uddf8"], ["13:00", "Vígjáték", "\ud83d\ude02"], ["16:00", "Romantikus", "\ud83d\udc95"], ["19:00", "Akciófilm", "\ud83d\udca5"], ["22:00", "Horror", "\ud83d\udc7b"]]);
+  const showTimes=ofArray([["10:00", "Children's Film", "\ud83e\uddf8"], ["13:00", "Comedy", "\ud83d\ude02"], ["16:00", "Romance", "\ud83d\udc95"], ["19:00", "Action", "\ud83d\udca5"], ["22:00", "Horror", "\ud83d\udc7b"]]);
   return Doc.Element("div", [Attr.Create("style", "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;")], [MenuBar(), Doc.Element("div", [Attr.Create("style", "max-width: 900px; margin: 0 auto; padding: 30px;")], [Doc.Element("h2", [Attr.Create("style", "text-align: center; margin-bottom: 10px;")], [Doc.TextNode("\ud83c\udfac Select a Date")]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Available for the next 14 days")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;")], ofSeq(delay(() => map_1((date) => {
-    let c;
     const dateStr=DateFormatter(date, "yyyy-MM-dd");
-    const dayName=(c=(new Date(date)).getDay(),String(c));
-    const m=(new Date(date)).getDay();
-    const dayHu=m===0?"Vasárnap":m===1?"Hétf\u0151":m===2?"Kedd":m===3?"Szerda":m===4?"Csütörtök":m===5?"Péntek":m===6?"Szombat":dayName;
-    return Doc.BindView((selected) => Doc.Element("button", [Attr.Create("style", selected==dateStr?"margin: 5px; padding: 10px 15px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: bold; text-align: center;":"margin: 5px; padding: 10px 15px; background: #333; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center;"), Handler("click", () =>() => selectedDate.Set(dateStr))], [Doc.Element("div", [], [Doc.TextNode(dayHu)]), Doc.Element("div", [Attr.Create("style", "font-size: 11px; opacity: 0.8;")], [Doc.TextNode(DateFormatter(date, "MM. dd."))])]), selectedDate.View);
+    const m=(new Date(Parse(dateStr))).getDay();
+    const dayName=m===0?"Sunday":m===1?"Monday":m===2?"Tuesday":m===3?"Wednesday":m===4?"Thursday":m===5?"Friday":m===6?"Saturday":"";
+    return Doc.BindView((selected) => Doc.Element("button", [Attr.Create("style", selected==dateStr?"margin: 5px; padding: 10px 15px; background: #e67e22; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: bold; text-align: center;":"margin: 5px; padding: 10px 15px; background: #333; color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center;"), Handler("click", () =>() => selectedDate.Set(dateStr))], [Doc.Element("div", [], [Doc.TextNode(dayName)]), Doc.Element("div", [Attr.Create("style", "font-size: 11px; opacity: 0.8;")], [Doc.TextNode(DateFormatter(date, "MM. dd."))])]), selectedDate.View);
   }, availableDates)))), Doc.BindView((dateStr) => {
     let c;
     if(dateStr=="")return Doc.Element("div", [Attr.Create("style", "text-align: center; color: #aaa; font-size: 16px; padding: 40px;")], [Doc.TextNode("\ud83d\udc46 Select a date to see show times")]);
     else {
       const dt=Parse(dateStr);
-      const m=(new Date(dt)).getDay();
-      const dayHu=m===0?"Vasárnap":m===1?"Hétf\u0151":m===2?"Kedd":m===3?"Szerda":m===4?"Csütörtök":m===5?"Péntek":m===6?"Szombat":(c=(new Date(dt)).getDay(),String(c));
-      return Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("style", "text-align: center; margin-bottom: 20px;")], [Doc.TextNode("\ud83d\udcc5 "+dayHu+" - "+DateFormatter(dt, "yyyy. MM. dd."))]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Click a show time to choose your parking spot")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;")], ofSeq(delay(() => collect((m_1) => {
-        let c_1;
-        const time=m_1[0];
-        const dayName=(c_1=(new Date(Parse(dateStr))).getDay(),String(c_1));
-        return[Doc.Element("button", [Attr.Create("style", "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"), Handler("click", () =>() => {
-          globalThis.location.href="/parking?day="+dayName+"&time="+time+"&date="+dateStr;
-        })], [Doc.Element("div", [], [Doc.TextNode("\ud83d\udd50 "+time)]), Doc.Element("div", [Attr.Create("style", "font-size: 14px; margin-top: 4px;")], [Doc.TextNode(m_1[2]+" "+m_1[1])]), Doc.Element("div", [Attr.Create("style", "font-size: 12px; opacity: 0.85; margin-top: 4px;")], [Doc.TextNode("Kattints a foglaláshoz")])])];
+      const dayName=(c=(new Date(dt)).getDay(),String(c));
+      return Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("style", "text-align: center; margin-bottom: 20px;")], [Doc.TextNode("\ud83d\udcc5 "+dayName+" - "+DateFormatter(dt, "yyyy. MM. dd."))]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Click a show time to choose your parking spot")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;")], ofSeq(delay(() => collect((m) => {
+        const time=m[0];
+        const genre=m[1];
+        const emoji=m[2];
+        const m_1=(new Date(Parse(dateStr))).getDay();
+        const dayName_1=m_1===0?"Sunday":m_1===1?"Monday":m_1===2?"Tuesday":m_1===3?"Wednesday":m_1===4?"Thursday":m_1===5?"Friday":m_1===6?"Saturday":"";
+        const now=Date.now();
+        return[Parse(dateStr+" "+time)<now?Doc.Element("button", [Attr.Create("style", "margin: 8px; padding: 20px 30px; background: #aaa; color: #eee; border: none; border-radius: 10px; font-size: 16px; cursor: not-allowed; font-weight: bold; width: 160px; opacity: 0.6;"), Attr.Create("disabled", "disabled")], [Doc.Element("div", [], [Doc.TextNode("\ud83d\udd50 "+time)]), Doc.Element("div", [Attr.Create("style", "font-size: 14px; margin-top: 4px;")], [Doc.TextNode(emoji+" "+genre)]), Doc.Element("div", [Attr.Create("style", "font-size: 12px; opacity: 0.85; margin-top: 4px;")], [Doc.TextNode("Already started")])]):Doc.Element("button", [Attr.Create("style", "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"), Handler("click", () =>() => {
+          globalThis.location.href="/parking?day="+dayName_1+"&time="+time+"&date="+dateStr;
+        })], [Doc.Element("div", [], [Doc.TextNode("\ud83d\udd50 "+time)]), Doc.Element("div", [Attr.Create("style", "font-size: 14px; margin-top: 4px;")], [Doc.TextNode(emoji+" "+genre)]), Doc.Element("div", [Attr.Create("style", "font-size: 12px; opacity: 0.85; margin-top: 4px;")], [Doc.TextNode("Click to book")])])];
       }, showTimes))))]);
     }
   }, selectedDate.View)])]);
@@ -113,9 +113,9 @@ export function Main(){
     parkedSpots().Set(map_2);
     return Zero();
   })), null);
-  return Doc.Element("div", [], [MenuBar(), Doc.Element("div", [Attr.Create("style", "padding: 10px 20px;")], [Doc.Element("button", [Attr.Create("style", "padding: 8px 20px; background: #555; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;"), Handler("click", () =>() => {
+  return Doc.Element("div", [], [MenuBar(), Doc.Element("div", [Attr.Create("style", "display: flex; align-items: center; justify-content: center; padding: 10px 20px; position: relative;")], [Doc.Element("button", [Attr.Create("style", "padding: 8px 20px; background: #555; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; position: absolute; left: 20px;"), Handler("click", () =>() => {
     globalThis.location.href="/";
-  })], [Doc.TextNode("\u2190 Back to Schedule")])]), Doc.Element("h1", [], [Doc.TextNode("Parking registry")]), Doc.Element("div", [Attr.Create("style", "\r\n                    width: 80%;\r\n                    margin: 30px auto 20px auto;\r\n                    height: 40px;\r\n                    background: black;\r\n                    border-radius: 4px;\r\n                    text-align: center;\r\n                    color: white;\r\n                    font-size: 18px;\r\n                    font-weight: bold;\r\n                    line-height: 40px;\r\n                    letter-spacing: 6px;\r\n                    border: 2px solid #ccc;\r\n                 ")], [Doc.TextNode("SCREEN")]), Doc.Element("div", [Attr.Create("style", "\r\n                     display:grid;\r\n                     grid-template-columns:repeat(10, 80px);\r\n                     gap:10px;\r\n                     justify-content:center;\r\n                     margin-top:30px;\r\n                 ")], ofSeq(delay(() => map_1(spotButton, parkingSpots())))), Doc.Element("h3", [], [Doc.TextView(Map((s) =>"The parking space of your choice: "+s, selectedSpot().View))]), Doc.Element("div", [], [Doc.TextNode("Plate: "), Doc.Input([Attr.Create("placeholder", "Text here your car plate"), Attr.Create("style", "margin:5px; padding:5px")], plateNumber())]), Doc.BindView((plate) => plate==""?Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px; background:#ccc; color:#666; border:none; cursor:not-allowed"), Attr.Create("disabled", "disabled")], [Doc.TextNode("Enter plate first")]):Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px; background:#e67e22; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer"), Handler("click", () =>() => {
+  })], [Doc.TextNode("\u2190 Back to Schedule")]), Doc.Element("h1", [Attr.Create("style", "margin: 0;")], [Doc.TextNode("Parking registry")])]), Doc.Element("div", [Attr.Create("style", "\r\n                    width: 80%;\r\n                    margin: 30px auto 20px auto;\r\n                    height: 40px;\r\n                    background: black;\r\n                    border-radius: 4px;\r\n                    text-align: center;\r\n                    color: white;\r\n                    font-size: 18px;\r\n                    font-weight: bold;\r\n                    line-height: 40px;\r\n                    letter-spacing: 6px;\r\n                    border: 2px solid #ccc;\r\n                 ")], [Doc.TextNode("SCREEN")]), Doc.Element("div", [Attr.Create("style", "\r\n                     display:grid;\r\n                     grid-template-columns:repeat(10, 80px);\r\n                     gap:10px;\r\n                     justify-content:center;\r\n                     margin-top:30px;\r\n                 ")], ofSeq(delay(() => map_1(spotButton, parkingSpots())))), Doc.Element("h3", [], [Doc.TextView(Map((s) =>"The parking space of your choice: "+s, selectedSpot().View))]), Doc.Element("div", [], [Doc.TextNode("Plate: "), Doc.Input([Attr.Create("placeholder", "Text here your car plate"), Attr.Create("style", "margin:5px; padding:5px")], plateNumber())]), Doc.BindView((plate) => plate==""?Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px; background:#ccc; color:#666; border:none; cursor:not-allowed"), Attr.Create("disabled", "disabled")], [Doc.TextNode("Enter plate first")]):Doc.Element("button", [Attr.Create("style", "margin:10px; padding:10px; background:#e67e22; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer"), Handler("click", () =>() => {
     const spot=selectedSpot().Get();
     const plate_1=plateNumber().Get();
     const current=parkedSpots().Get();
