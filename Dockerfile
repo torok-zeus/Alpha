@@ -4,10 +4,19 @@ WORKDIR /src
 # Install node.js - required for WebSharper compiler
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs && \
+    node --version && npm --version
 
 COPY . .
+
+# Make WebSharper scripts executable
+RUN find /root/.nuget -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+
 RUN dotnet restore Alpha.fsproj
+
+# Make scripts executable after restore (nuget packages downloaded)
+RUN find /root/.nuget -name "*.sh" -exec chmod +x {} \;
+
 RUN dotnet publish Alpha.fsproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
