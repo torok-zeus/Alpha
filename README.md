@@ -7,13 +7,13 @@
  Screenshots
 
 ### Schedule Page
-![Schedule Page](screenshots/schedule.png)
+![Schedule Page](screenshoots/schedule.png)
 
 ### Parking Registry
-![Parking Registry](screenshots/parking.png)
+![Parking Registry](screenshoots/parking.png)
 
 ### Snack Selection
-![Snack Selection](screenshots/snacks.png)
+![Snack Selection](screenshoots/snacks.png)
 
 ---
 
