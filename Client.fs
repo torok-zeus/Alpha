@@ -168,6 +168,13 @@ module Client =
                           )
                       ] [ text "🍿 Snacks" ]
                ) plateNumber.View
+               h3 [] [
+                textView (
+                    selectedSpot.View.Map(fun s ->
+                        "The parking space of your choice: " + s
+                    )
+                )
+            ]
             ]
             div [
                 attr.style "
@@ -197,14 +204,6 @@ module Client =
                 for s in parkingSpots do
                     spotButton s
             ]
-            h3 [] [
-                textView (
-                    selectedSpot.View.Map(fun s ->
-                        "The parking space of your choice: " + s
-                    )
-                )
-            ]
-            
         ]
 
     let PaymentMain () =
