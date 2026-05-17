@@ -407,11 +407,11 @@ module Client =
         |> Async.StartImmediate
 
         let showTimes = [
-            "10:00"
-            "13:00"
-            "16:00"
-            "19:00"
-            "22:00"
+            "10:00", "Gyerekfilm", "🧸"
+            "13:00", "Vígjáték",   "😂"
+            "16:00", "Romantikus", "💕"
+            "19:00", "Akciófilm",  "💥"
+            "22:00", "Horror",     "👻"
         ]
         let dateButton (date: System.DateTime) =
             let dateStr = date.ToString("yyyy-MM-dd")
@@ -444,17 +444,18 @@ module Client =
                 ]
             ) selectedDate.View
 
-        let timeButton (time: string) (dateStr: string) =
+        let timeButton (time: string) (genre: string) (emoji: string) (dateStr: string) =
             let dt = System.DateTime.Parse(dateStr)
             let dayName = dt.DayOfWeek.ToString()
             button [
-                attr.style "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 140px;"
+                attr.style "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"
                 on.click (fun _ _ ->
                     JS.Window.Location.Href <- "/parking?day=" + dayName + "&time=" + time + "&date=" + dateStr
                 )
             ] [
                 div [] [ text ("🕐 " + time) ]
-                div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Click to book" ]
+                div [ attr.style "font-size: 14px; margin-top: 4px;" ] [ text (emoji + " " + genre) ]
+                div [ attr.style "font-size: 12px; opacity: 0.85; margin-top: 4px;" ] [ text "Kattints a foglaláshoz" ]
             ]
 
         div [ attr.style "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;" ] [
@@ -495,8 +496,8 @@ module Client =
                                 text "Click a show time to choose your parking spot"
                             ]
                             div [ attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;" ] [
-                                for time in showTimes do
-                                    timeButton time dateStr
+                                for (time, genre, emoji) in showTimes do
+                                    timeButton time genre emoji dateStr
                             ]
                         ]
                 ) selectedDate.View

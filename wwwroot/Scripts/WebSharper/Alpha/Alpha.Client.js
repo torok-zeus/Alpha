@@ -5,7 +5,7 @@ import { StartImmediate, Delay, Bind, Return, Zero } from "../WebSharper.StdLib/
 import { CleanExpiredBookings, LoadParking, ParkCar } from "./Alpha.Remoting.js"
 import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
 import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
-import { delay, map as map_1, sumBy } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
+import { delay, map as map_1, collect, sumBy } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
 import { DateFormatter } from "../WebSharper.StdLib/WebSharper.JavaScript.Pervasives.DateTime.js"
 import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
 import { Parse } from "../WebSharper.StdLib/WebSharper.DateTimeHelpers.js"
@@ -23,7 +23,7 @@ export function ScheduleMain(){
   const today=Date.now();
   const availableDates=map((i) => today+i*864E5, ofSeq(range(0, 13)));
   StartImmediate(Delay(() => Bind(CleanExpiredBookings(), () => Return(null))), null);
-  const showTimes=ofArray(["10:00", "13:00", "16:00", "19:00", "22:00"]);
+  const showTimes=ofArray([["10:00", "Gyerekfilm", "\ud83e\uddf8"], ["13:00", "Vígjáték", "\ud83d\ude02"], ["16:00", "Romantikus", "\ud83d\udc95"], ["19:00", "Akciófilm", "\ud83d\udca5"], ["22:00", "Horror", "\ud83d\udc7b"]]);
   return Doc.Element("div", [Attr.Create("style", "background: #f5f5f5; min-height: 100vh; font-family: sans-serif;")], [MenuBar(), Doc.Element("div", [Attr.Create("style", "max-width: 900px; margin: 0 auto; padding: 30px;")], [Doc.Element("h2", [Attr.Create("style", "text-align: center; margin-bottom: 10px;")], [Doc.TextNode("\ud83c\udfac Select a Date")]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Available for the next 14 days")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 30px;")], ofSeq(delay(() => map_1((date) => {
     let c;
     const dateStr=DateFormatter(date, "yyyy-MM-dd");
@@ -38,12 +38,13 @@ export function ScheduleMain(){
       const dt=Parse(dateStr);
       const m=(new Date(dt)).getDay();
       const dayHu=m===0?"Vasárnap":m===1?"Hétf\u0151":m===2?"Kedd":m===3?"Szerda":m===4?"Csütörtök":m===5?"Péntek":m===6?"Szombat":(c=(new Date(dt)).getDay(),String(c));
-      return Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("style", "text-align: center; margin-bottom: 20px;")], [Doc.TextNode("\ud83d\udcc5 "+dayHu+" - "+DateFormatter(dt, "yyyy. MM. dd."))]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Click a show time to choose your parking spot")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;")], ofSeq(delay(() => map_1((time) => {
+      return Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("style", "text-align: center; margin-bottom: 20px;")], [Doc.TextNode("\ud83d\udcc5 "+dayHu+" - "+DateFormatter(dt, "yyyy. MM. dd."))]), Doc.Element("p", [Attr.Create("style", "text-align: center; color: #888; margin-bottom: 20px;")], [Doc.TextNode("Click a show time to choose your parking spot")]), Doc.Element("div", [Attr.Create("style", "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;")], ofSeq(delay(() => collect((m_1) => {
         let c_1;
+        const time=m_1[0];
         const dayName=(c_1=(new Date(Parse(dateStr))).getDay(),String(c_1));
-        return Doc.Element("button", [Attr.Create("style", "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 140px;"), Handler("click", () =>() => {
+        return[Doc.Element("button", [Attr.Create("style", "margin: 8px; padding: 20px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; width: 160px;"), Handler("click", () =>() => {
           globalThis.location.href="/parking?day="+dayName+"&time="+time+"&date="+dateStr;
-        })], [Doc.Element("div", [], [Doc.TextNode("\ud83d\udd50 "+time)]), Doc.Element("div", [Attr.Create("style", "font-size: 12px; opacity: 0.85; margin-top: 4px;")], [Doc.TextNode("Click to book")])]);
+        })], [Doc.Element("div", [], [Doc.TextNode("\ud83d\udd50 "+time)]), Doc.Element("div", [Attr.Create("style", "font-size: 14px; margin-top: 4px;")], [Doc.TextNode(m_1[2]+" "+m_1[1])]), Doc.Element("div", [Attr.Create("style", "font-size: 12px; opacity: 0.85; margin-top: 4px;")], [Doc.TextNode("Kattints a foglaláshoz")])])];
       }, showTimes))))]);
     }
   }, selectedDate.View)])]);
