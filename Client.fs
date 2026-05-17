@@ -125,51 +125,50 @@ module Client =
                 ] [ text "← Back to Schedule" ]
                 h1 [ attr.style "margin: 0;" ] [ text "Parking registry" ]
             ]
-            div [] [
+            div [attr.style "text-align: center; margin-top: 10px;"] [
                 Doc.Input[
                     attr.placeholder "Text here your car plate"
                     attr.style "margin:5px; padding:5px"
                 ] plateNumber
             ]
-            Doc.BindView (fun plate ->
-                if plate = "" then
-                    button [
-                        attr.style "margin:10px; padding:10px; background:#ccc; color:#666; border:none; cursor:not-allowed"
-                        attr.disabled "disabled"
-                    ] [ text "Enter plate first" ]
-                else
-                    button [
-                        attr.style "margin:10px; padding:10px; background:#e67e22; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer"
-                        on.click (fun _ _ ->
-                            let spot = selectedSpot.Value
-                            let plate = plateNumber.Value
-                            let current = parkedSpots.Value
+            div[attr.style "text-align: center; margin-top: 10px;"] [
+               Doc.BindView (fun plate ->
+                   if plate = "" then
+                      button [
+                          attr.style "margin:10px; padding:10px; background:#ccc; color:#666; border:none; cursor:not-allowed"
+                          attr.disabled "disabled"
+                      ] [ text "Enter plate first" ]
+                   else
+                      button [
+                          attr.style "margin:10px; padding:10px; background:#e67e22; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer"
+                          on.click (fun _ _ ->
+                              let spot = selectedSpot.Value
+                              let plate = plateNumber.Value
+                              let current = parkedSpots.Value
 
-                            if spot = "is not selected" then
-                                JS.Alert("First choose a parking space")
-                            elif current.ContainsKey spot then
-                                JS.Alert("This parking space is already occupied!")
-                            else
-                                async {
-                                    do! Remoting.ParkCar spot plate currentDay currentTime currentDate
-
-                                    let newRecord =
-                                        {
-                                            Spot = spot
-                                            Plate = plate
-                                            StartTime = System.DateTime.Now.ToString("o")
-                                        }
-
-                                    parkedSpots.Value <- current.Add(spot, newRecord)
-                                    plateNumber.Value <- ""
-                                    selectedSpot.Value <- "is not selected"
-
-                                    JS.Window.Location.Href <- "/payment?spot=" + spot + "&day=" + currentDay + "&time=" + currentTime + "&date=" + currentDate
-                                }
-                                |> Async.StartImmediate
-                        )
-                    ] [ text "🍿 Snacks" ]
-            ) plateNumber.View
+                              if spot = "is not selected" then
+                                  JS.Alert("First choose a parking space")
+                              elif current.ContainsKey spot then
+                                  JS.Alert("This parking space is already occupied!")
+                              else
+                                  async {
+                                      do! Remoting.ParkCar spot plate currentDay currentTime currentDate
+                                      let newRecord =
+                                          {
+                                              Spot = spot
+                                              Plate = plate
+                                              StartTime = System.DateTime.Now.ToString("o")
+                                          }
+                                      parkedSpots.Value <- current.Add(spot, newRecord)
+                                      plateNumber.Value <- ""
+                                      selectedSpot.Value <- "is not selected"
+                                      JS.Window.Location.Href <- "/payment?spot=" + spot + "&day=" + currentDay + "&time=" + currentTime + "&date=" + currentDate
+                                  }
+                                  |> Async.StartImmediate
+                          )
+                      ] [ text "🍿 Snacks" ]
+               ) plateNumber.View
+            ]
             div [
                 attr.style "
                     width: 80%;
