@@ -1,5 +1,5 @@
 import Var from "../WebSharper.UI/WebSharper.UI.Var.js"
-import { map, ofSeq, ofArray, choose } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ListModule.js"
+import { map, ofSeq, ofArray } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ListModule.js"
 import { range } from "../WebSharper.StdLib/Microsoft.FSharp.Core.Operators.js"
 import { StartImmediate, Delay, Bind, Return, Zero } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import { CleanExpiredBookings, LoadParking, ParkCar } from "./Alpha.Remoting.js"
@@ -11,7 +11,7 @@ import { Handler, Dynamic } from "../WebSharper.UI/WebSharper.UI.Client.Attr.js"
 import { Parse } from "../WebSharper.StdLib/WebSharper.DateTimeHelpers.js"
 import FSharpMap from "../WebSharper.StdLib/Microsoft.FSharp.Collections.FSharpMap`2.js"
 import { get } from "../WebSharper.StdLib/Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.js"
-import { SplitChars, concat } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
+import { SplitChars } from "../WebSharper.StdLib/Microsoft.FSharp.Core.StringModule.js"
 import { Map } from "../WebSharper.UI/WebSharper.UI.View.js"
 import { tryFind, ofSeq as ofSeq_1 } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ArrayModule.js"
 import { Some } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1.js"
@@ -81,29 +81,7 @@ export function PaymentMain(){
       const m=cart.Get().TryFind(_1[0]);
       return m==null?0:m.$0*_1[1];
     }, snacks);
-    if(total===0)return alert("You have not selected anything!");
-    else {
-      const url_1=globalThis.location.search;
-      const o=tryFind((p) => p.indexOf("day=")!=-1, SplitChars(url_1, ["&"], 0));
-      const o_1=o==null?null:Some(get(SplitChars(o.$0, ["="], 0), 1));
-      const currentDay=o_1==null?"":o_1.$0;
-      const o_2=tryFind((p) => p.indexOf("time=")!=-1, SplitChars(url_1, ["&"], 0));
-      const o_3=o_2==null?null:Some(get(SplitChars(o_2.$0, ["="], 0), 1));
-      const currentTime=o_3==null?"":o_3.$0;
-      const o_4=tryFind((p) => p.indexOf("date=")!=-1, SplitChars(url_1, ["&"], 0));
-      const o_5=o_4==null?null:Some(get(SplitChars(o_4.$0, ["="], 0), 1));
-      const currentDate=o_5==null?"":o_5.$0;
-      const snackLines=concat("\\n", choose((_1) => {
-        let _2;
-        const name=_1[0];
-        const m=cart.Get().TryFind(name);
-        return m!=null&&m.$==1&&(m.$0>0&&(_2=m.$0,true))?Some(name+" x"+String(_2)+" = "+String(_2*_1[1])+" Ft"):null;
-      }, snacks));
-      eval("\r\n                                      (function() {\r\n                                          var doc = new jspdf.jsPDF();\r\n                                          doc.setFontSize(22);\r\n                                          doc.setTextColor(40, 40, 40);\r\n                                          doc.text('Cinema Ticket & Invoice', 105, 20, {align: 'center'});\r\n                                          doc.setDrawColor(200, 200, 200);\r\n                                          doc.line(20, 28, 190, 28);\r\n                                          doc.setFontSize(12);\r\n                                          doc.setTextColor(80, 80, 80);\r\n                                          doc.text('Date of purchase: "+DateFormatter(Date.now(), "yyyy-MM-dd HH:mm")+"', 20, 38);\r\n                                          doc.text('Show: "+currentDate+" "+currentDay+" "+currentTime+"', 20, 46);\r\n                                          doc.setFontSize(14);\r\n                                          doc.setTextColor(40, 40, 40);\r\n                                          doc.text('Parking', 20, 58);\r\n                                          doc.setFontSize(11);\r\n                                          doc.setTextColor(80, 80, 80);\r\n                                          doc.text('Spot: "+currentSpot+"', 20, 68);\r\n                                          doc.text('Parking price: "+String(spotPrice)+" Ft', 20, 76);\r\n                                          doc.setFontSize(14);\r\n                                          doc.setTextColor(40, 40, 40);\r\n                                          doc.text('Snacks', 20, 90);\r\n                                          doc.setFontSize(11);\r\n                                          doc.setTextColor(80, 80, 80);\r\n                                          var lines = '"+snackLines+"'.split('\\\\n');\r\n                                          var y = 100;\r\n                                          for (var i = 0; i < lines.length; i++) {\r\n                                              if (lines[i]) { doc.text(lines[i], 20, y); y += 9; }\r\n                                          }\r\n                                          doc.setDrawColor(200, 200, 200);\r\n                                          doc.line(20, y + 2, 190, y + 2);\r\n                                          doc.setFontSize(16);\r\n                                          doc.setTextColor(40, 40, 40);\r\n                                          doc.text('TOTAL: "+String(total)+" Ft', 20, y + 14);\r\n                                          doc.setFontSize(10);\r\n                                          doc.setTextColor(150, 150, 150);\r\n                                          doc.text('Thank you for your visit!', 105, y + 30, {align: 'center'});\r\n                                          doc.save('cinema-ticket.pdf');\r\n                                      })();\r\n                                      ");
-      cart.Set(new FSharpMap("New", []));
-      globalThis.location.href="/";
-      return;
-    }
+    return total===0?alert("You have not selected anything!"):(alert("Order placed! Total: "+String(total)+" Ft\nThank you for your visit!"),cart.Set(new FSharpMap("New", [])),void(globalThis.location.href="/"));
   })], [Doc.TextNode("Place Order")])])])]);
 }
 export function Main(){

@@ -385,76 +385,10 @@ module Client =
                               if total = 0 then
                                   JS.Alert("You have not selected anything!")
                               else
-                                  let url = JS.Window.Location.Search
-                                  let currentDay =
-                                      url.Split('&')
-                                      |> Array.tryFind (fun p -> p.Contains("day="))
-                                      |> Option.map (fun p -> p.Split('=').[1])
-                                      |> Option.defaultValue ""
-                                  let currentTime =
-                                      url.Split('&')
-                                      |> Array.tryFind (fun p -> p.Contains("time="))
-                                      |> Option.map (fun p -> p.Split('=').[1])
-                                      |> Option.defaultValue ""
-                                  let currentDate =
-                                      url.Split('&')
-                                      |> Array.tryFind (fun p -> p.Contains("date="))
-                                      |> Option.map (fun p -> p.Split('=').[1])
-                                      |> Option.defaultValue ""
-                                  let snackLines =
-                                      snacks
-                                      |> List.choose (fun (name, price, _) ->
-                                          match cart.Value.TryFind name with
-                                          | Some qty when qty > 0 ->
-                                              Some (name + " x" + string qty + " = " + string (qty * price) + " Ft")
-                                          | _ -> None
-                                      )
-                                      |> String.concat "\\n"
-                                  let script =
-                                      """
-                                      (function() {
-                                          var doc = new jspdf.jsPDF();
-                                          doc.setFontSize(22);
-                                          doc.setTextColor(40, 40, 40);
-                                          doc.text('Cinema Ticket & Invoice', 105, 20, {align: 'center'});
-                                          doc.setDrawColor(200, 200, 200);
-                                          doc.line(20, 28, 190, 28);
-                                          doc.setFontSize(12);
-                                          doc.setTextColor(80, 80, 80);
-                                          doc.text('Date of purchase: """ + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm") + """', 20, 38);
-                                          doc.text('Show: """ + currentDate + " " + currentDay + " " + currentTime + """', 20, 46);
-                                          doc.setFontSize(14);
-                                          doc.setTextColor(40, 40, 40);
-                                          doc.text('Parking', 20, 58);
-                                          doc.setFontSize(11);
-                                          doc.setTextColor(80, 80, 80);
-                                          doc.text('Spot: """ + currentSpot + """', 20, 68);
-                                          doc.text('Parking price: """ + string spotPrice + """ Ft', 20, 76);
-                                          doc.setFontSize(14);
-                                          doc.setTextColor(40, 40, 40);
-                                          doc.text('Snacks', 20, 90);
-                                          doc.setFontSize(11);
-                                          doc.setTextColor(80, 80, 80);
-                                          var lines = '""" + snackLines + """'.split('\\n');
-                                          var y = 100;
-                                          for (var i = 0; i < lines.length; i++) {
-                                              if (lines[i]) { doc.text(lines[i], 20, y); y += 9; }
-                                          }
-                                          doc.setDrawColor(200, 200, 200);
-                                          doc.line(20, y + 2, 190, y + 2);
-                                          doc.setFontSize(16);
-                                          doc.setTextColor(40, 40, 40);
-                                          doc.text('TOTAL: """ + string total + """ Ft', 20, y + 14);
-                                          doc.setFontSize(10);
-                                          doc.setTextColor(150, 150, 150);
-                                          doc.text('Thank you for your visit!', 105, y + 30, {align: 'center'});
-                                          doc.save('cinema-ticket.pdf');
-                                      })();
-                                      """
-                                  JS.Eval(script) |> ignore
+                                  JS.Alert($"Order placed! Total: {total} Ft\nThank you for your visit!")
                                   cart.Value <- Map.empty
                                   JS.Window.Location.Href <- "/"
-                          )
+                          ) 
                       ] [ text "Place Order" ]
                  ]
             ]
