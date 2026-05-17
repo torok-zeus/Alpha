@@ -7,7 +7,8 @@
  Screenshots
 
 ### Schedule Page
-![Schedule Page](screenshoots/schedule.png)
+![Schedule Page](screenshoots/schedule1.png)
+![Schedule Page](screenshoots/schedule2.png)
 
 ### Parking Registry
 ![Parking Registry](screenshoots/parking.png)
